@@ -130,6 +130,79 @@ function App() {
     return brand.charAt(0).toUpperCase() + brand.slice(1);
   };
 
+  // Helper: Camera cut advice based on notch type
+  const getCameraCutAdvice = (notch_type) => {
+    const n = (notch_type || '').toLowerCase();
+    if (n.includes('punch hole') || n.includes('punch-hole')) return { cut: false, label: 'No Cut Needed', icon: '⦿', tip: 'Punch-hole display — the camera hole is already cut into the screen. Avoid glass with a top notch cut.' };
+    if (n.includes('wide notch') || n.includes('wide-notch')) return { cut: true, label: 'Wide Cut Required', icon: '▬', tip: 'Wide notch display — glass needs a wide top cutout. Ensure notch width matches the glass.' };
+    if (n.includes('waterdrop') || n.includes('v-notch') || n.includes('u-notch') || n.includes('drop')) return { cut: true, label: 'V/U Cut Required', icon: '💧', tip: 'Waterdrop notch — glass needs a V or U-shaped top cutout for camera visibility.' };
+    if (n.includes('pop-up') || n.includes('popup') || n.includes('pop up')) return { cut: false, label: 'No Cut Needed', icon: '⬆', tip: 'Pop-up camera — camera is mechanical. Full-edge coverage glass with no cut is correct.' };
+    if (n.includes('dynamic island') || n.includes('island')) return { cut: false, label: 'No Cut Needed', icon: '💊', tip: 'Dynamic Island (Apple) — uncut glass fits around the capsule display without interference.' };
+    if (n.includes('bezel') || n.includes('classic')) return { cut: true, label: 'Camera Cut Required', icon: '📷', tip: 'Classic bezel display — a small camera cut is required to avoid obstruction and dust entry.' };
+    // Default for flat/no notch
+    return { cut: false, label: 'No Cut Needed', icon: '▭', tip: 'Full-screen or bar-type display — no notch cut required on the glass.' };
+  };
+
+  // Helper: Confidence score (0–100)
+  const getConfidenceScore = (glass, device, result) => {
+    if (!glass || !device || !result) return null;
+    if (result.color_code === 'RED') return { score: 0, label: 'Not Compatible', color: 'text-red-400', bar: 'bg-red-500' };
+    let score = 100;
+    score -= Math.abs(result.hDiff) * 12;
+    score -= Math.abs(result.wDiff) * 12;
+    const sizeDiff = Math.abs((glass.screen_size || 0) - (device.screen_size || 0));
+    score -= sizeDiff * 18;
+    const dh = Math.abs((glass.display_height_mm || 0) - (device.display_height_mm || 0));
+    const dw = Math.abs((glass.display_width_mm || 0) - (device.display_width_mm || 0));
+    if (dh > 0) score -= dh * 8;
+    if (dw > 0) score -= dw * 8;
+    score = Math.max(0, Math.min(100, Math.round(score)));
+    if (score >= 88) return { score, label: 'Excellent Fit', color: 'text-teal-300', bar: 'bg-teal-400' };
+    if (score >= 70) return { score, label: 'Good Fit', color: 'text-green-300', bar: 'bg-green-400' };
+    if (score >= 50) return { score, label: 'Borderline — Verify Physically', color: 'text-yellow-300', bar: 'bg-yellow-400' };
+    return { score, label: 'Poor Fit', color: 'text-orange-400', bar: 'bg-orange-400' };
+  };
+
+  // Helper: In-display fingerprint warning
+  const getFingerprintWarning = (phone) => {
+    if (!phone) return null;
+    const brand = (phone.brand || '').toLowerCase();
+    const screen = (phone.screen_type || '').toLowerCase();
+    const isAmoled = screen.includes('amoled') || screen.includes('oled');
+    const isFpsRisk = ['oneplus', 'samsung', 'vivo', 'iqoo', 'realme', 'xiaomi', 'oppo'].includes(brand);
+    if (isAmoled && isFpsRisk) return '⚠️ In-display fingerprint sensor detected. Use glass ≤ 0.33mm. Thick glass may cause fingerprint unlock failure.';
+    return null;
+  };
+
+  // Helper: Failure mode warnings based on result
+  const getFailureWarnings = (glass, device, result, glassType) => {
+    if (!glass || !device || !result) return [];
+    const warnings = [];
+    if (glassType === 'Type B') {
+      if (result.hDiff < -1.0 && result.hDiff >= -3.0) warnings.push('⚠️ Corner lift risk — small gap between glass edge and device bezel may cause lifting over time.');
+      if (result.hDiff > 0.1 || result.wDiff > 0.1) warnings.push('❌ Glass overhangs device — black borders may leak and look misaligned.');
+      const isFpsDevice = getFingerprintWarning(device);
+      if (isFpsDevice) warnings.push('⚠️ Full-cover (Type B) glass is thicker — may reduce in-display fingerprint accuracy on AMOLED phones.');
+    }
+    if (glass.notch_type !== device.notch_type) warnings.push('❌ Camera cut mismatch — glass has wrong notch cut for this device. Risk of camera obstruction or dust entry.');
+    if ((glass.screen_type || '').toLowerCase().includes('curved') && (device.screen_type || '').toLowerCase().includes('flat'))
+      warnings.push('⚠️ Curved glass on flat screen — edges may not adhere fully, causing lift at corners.');
+    return warnings;
+  };
+
+  // Helper: Installation tips per display type
+  const getInstallTips = (notch_type, screen_type, glassType) => {
+    const tips = ['🧹 Clean the screen with a microfiber cloth and remove all dust before applying.', '💨 Use the included dust sticker to pick up any remaining particles in corners.'];
+    const n = (notch_type || '').toLowerCase();
+    if (n.includes('punch hole')) tips.push('⦿ Align the camera hole cutout first, then press edges down from center outward.');
+    else if (n.includes('wide notch')) tips.push('▬ Align the top notch cut-out with camera area before pressing down.');
+    else if (n.includes('waterdrop') || n.includes('drop')) tips.push('💧 Align the V/U notch cut to the camera, then press from top to bottom.');
+    if ((screen_type || '').toLowerCase().includes('amoled')) tips.push('👆 Avoid pressing hard near the fingerprint zone — air bubbles here will block the sensor.');
+    if (glassType === 'Type B') tips.push('🖤 Press from center outward and ensure black borders are seated flush against the bezel.');
+    tips.push('🕐 Wait 24–48 hours for adhesive to fully cure before applying a case.');
+    return tips;
+  };
+
   const searchOnline = async (query, setModel, setQuery) => {
     if (!query) return;
     setLoading(true);
@@ -567,6 +640,17 @@ function App() {
                 </div>
               </div>
 
+              <div className="mb-4">
+                <label className="block text-xs font-medium text-slate-400 mb-1.5">Glass Thickness <span className="text-slate-600">(select if known)</span></label>
+                <select name="glass_thickness" value={manualForm.glass_thickness || ''} onChange={handleManualChange} className="w-full bg-slate-900/50 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none">
+                  <option value="">Unknown</option>
+                  <option value="0.2">0.2mm — Ultra-thin</option>
+                  <option value="0.3">0.3mm — Standard</option>
+                  <option value="0.33">0.33mm — Most common</option>
+                  <option value="0.4">0.4mm — Thick (may block FPS)</option>
+                </select>
+              </div>
+
               <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-green-900/20">
                 {loading ? 'Saving...' : 'Save Model'}
               </button>
@@ -920,6 +1004,22 @@ function App() {
                 </p>
               </div>
 
+              {/* Confidence Score Bar */}
+              {(() => {
+                const conf = getConfidenceScore(glassModel, deviceModel, result);
+                return conf ? (
+                  <div className="mb-6 bg-black/20 rounded-2xl p-4 border border-white/5">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Fit Confidence</p>
+                      <span className={`text-xs font-bold ${conf.color}`}>{conf.score}% — {conf.label}</span>
+                    </div>
+                    <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                      <div className={`h-2 rounded-full transition-all duration-700 ${conf.bar}`} style={{ width: `${conf.score}%` }}></div>
+                    </div>
+                  </div>
+                ) : null;
+              })()}
+
               {/* Data Table */}
               <div className="bg-slate-900/40 rounded-2xl border border-white/5 overflow-hidden">
                 <table className="w-full text-sm text-left">
@@ -1012,6 +1112,98 @@ function App() {
                     🔄 New Check
                   </button>
                 </div>
+              </div>
+
+              {/* Camera Cut Advisory */}
+              {(() => {
+                const advice = getCameraCutAdvice(deviceModel.notch_type);
+                return (
+                  <div className={`mt-4 p-4 rounded-xl border flex gap-3 items-start ${advice.cut ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-teal-500/10 border-teal-500/20'
+                    }`}>
+                    <span className="text-2xl shrink-0">{advice.icon}</span>
+                    <div>
+                      <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${advice.cut ? 'text-yellow-300' : 'text-teal-300'}`}>
+                        📷 Camera Cut Guide — {advice.label}
+                      </p>
+                      <p className="text-xs text-slate-300 leading-relaxed">{advice.tip}</p>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* In-Display FPS Warning */}
+              {getFingerprintWarning(deviceModel) && (
+                <div className="mt-3 p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl flex gap-3 items-start">
+                  <span className="text-xl shrink-0">👆</span>
+                  <p className="text-xs text-orange-200 leading-relaxed">{getFingerprintWarning(deviceModel)}</p>
+                </div>
+              )}
+
+              {/* BBK Family Note */}
+              {result.color_code !== 'RED' && getBrandFamily(glassModel.brand) === 'BBK' && getBrandFamily(deviceModel.brand) === 'BBK' && glassModel.brand !== deviceModel.brand && (
+                <div className="mt-3 p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl flex gap-3 items-start">
+                  <span className="text-xl shrink-0">⭐</span>
+                  <p className="text-xs text-purple-200 leading-relaxed">
+                    <span className="font-bold">BBK Family Cross-Match</span> — {glassModel.brand} and {deviceModel.brand} are both BBK family brands (OPPO/Vivo/Realme/OnePlus/iQOO) and often share identical display dimensions. This is a commonly successful cross-brand fit.
+                  </p>
+                </div>
+              )}
+
+              {/* Case-Friendly Note */}
+              {result.color_code !== 'RED' && (
+                <div className="mt-3 p-3 bg-white/5 border border-white/5 rounded-xl flex gap-3 items-start">
+                  <span className="text-base shrink-0">{glassType === 'Type B' ? '⚠️' : '✅'}</span>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    {glassType === 'Type B'
+                      ? 'Full-cover (Type B) glass has black borders — may conflict with thick cases. Test case fit after installing.'
+                      : 'Clear (Type A) glass is usually case-friendly — no black borders to conflict with case edges.'}
+                  </p>
+                </div>
+              )}
+
+              {/* Failure Mode Warnings */}
+              {(() => {
+                const warns = getFailureWarnings(glassModel, deviceModel, result, glassType);
+                return warns.length > 0 ? (
+                  <div className="mt-4 space-y-2">
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">⚠️ Risk Factors</p>
+                    {warns.map((w, i) => (
+                      <div key={i} className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                        <p className="text-xs text-red-300 leading-relaxed">{w}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : null;
+              })()}
+
+              {/* Installation Tips */}
+              {result.color_code !== 'RED' && (() => {
+                const tips = getInstallTips(deviceModel.notch_type, deviceModel.screen_type, glassType);
+                return (
+                  <details className="mt-4 group">
+                    <summary className="cursor-pointer text-xs font-semibold text-slate-400 uppercase tracking-wider hover:text-white transition-colors select-none">
+                      📋 Installation Tips ({tips.length} steps) ▸
+                    </summary>
+                    <div className="mt-3 space-y-2 pl-2">
+                      {tips.map((tip, i) => (
+                        <div key={i} className="flex gap-2.5 items-start">
+                          <span className="text-xs font-bold text-slate-500 shrink-0 mt-0.5">{i + 1}.</span>
+                          <p className="text-xs text-slate-300 leading-relaxed">{tip}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                );
+              })()}
+
+              {/* Copy Result + New Check */}
+              <div className="mt-6 flex justify-center gap-3">
+                <button onClick={copyResult} className="flex items-center gap-2 px-6 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-semibold text-white border border-white/10 transition-all">
+                  📋 Copy Result
+                </button>
+                <button onClick={() => { setResult(null); setGlassModel(null); setDeviceModel(null); setGlassQuery(''); setDeviceQuery(''); }} className="flex items-center gap-2 px-6 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-sm font-semibold text-slate-400 hover:text-white border border-white/10 transition-all">
+                  🔄 New Check
+                </button>
               </div>
             </div>
           </div>

@@ -754,5 +754,18 @@
         "image_url": "https://fdn2.gsmarena.com/vv/bigpic/vivo-y18e.jpg",
         "display_height_mm": 152.14,
         "display_width_mm": 67.95
+    },
+    {
+        "model": "vivo Y37",
+        "brand": "vivo",
+        "screen_size": 6.56,
+        "height_mm": 163.6,
+        "width_mm": 75.6,
+        "screen_type": "Flat",
+        "notch_type": "Waterdrop",
+        "resolution": "720 x 1612 pixels",
+        "image_url": "https://fdn2.gsmarena.com/vv/bigpic/vivo-y37-2024.jpg",
+        "display_height_mm": 152.14,
+        "display_width_mm": 67.95
     }
 ]

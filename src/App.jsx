@@ -130,17 +130,18 @@ function App() {
     return brand.charAt(0).toUpperCase() + brand.slice(1);
   };
 
-  // Helper: Camera cut advice based on notch type
+  // Helper: Camera cut advice based on notch type (standardized values)
   const getCameraCutAdvice = (notch_type) => {
-    const n = (notch_type || '').toLowerCase();
-    if (n.includes('punch hole') || n.includes('punch-hole')) return { cut: false, label: 'No Cut Needed', icon: '⦿', tip: 'Punch-hole display — the camera hole is already cut into the screen. Avoid glass with a top notch cut.' };
-    if (n.includes('wide notch') || n.includes('wide-notch')) return { cut: true, label: 'Wide Cut Required', icon: '▬', tip: 'Wide notch display — glass needs a wide top cutout. Ensure notch width matches the glass.' };
-    if (n.includes('waterdrop') || n.includes('v-notch') || n.includes('u-notch') || n.includes('drop')) return { cut: true, label: 'V/U Cut Required', icon: '💧', tip: 'Waterdrop notch — glass needs a V or U-shaped top cutout for camera visibility.' };
-    if (n.includes('pop-up') || n.includes('popup') || n.includes('pop up')) return { cut: false, label: 'No Cut Needed', icon: '⬆', tip: 'Pop-up camera — camera is mechanical. Full-edge coverage glass with no cut is correct.' };
-    if (n.includes('dynamic island') || n.includes('island')) return { cut: false, label: 'No Cut Needed', icon: '💊', tip: 'Dynamic Island (Apple) — uncut glass fits around the capsule display without interference.' };
-    if (n.includes('bezel') || n.includes('classic')) return { cut: true, label: 'Camera Cut Required', icon: '📷', tip: 'Classic bezel display — a small camera cut is required to avoid obstruction and dust entry.' };
-    // Default for flat/no notch
-    return { cut: false, label: 'No Cut Needed', icon: '▭', tip: 'Full-screen or bar-type display — no notch cut required on the glass.' };
+    const n = (notch_type || '').trim();
+    if (n === 'Punch Hole') return { cut: false, label: 'No Cut Needed', icon: '⦿', tip: 'Punch-hole display — the camera hole is cut into the screen itself. Use glass with no top notch cut.' };
+    if (n === 'Dual Punch Hole') return { cut: false, label: 'No Cut Needed', icon: '⦿⦿', tip: 'Dual punch-hole display — two camera holes cut into the screen. Use glass with no notch cut at the top.' };
+    if (n === 'Waterdrop') return { cut: true, label: 'Waterdrop Cut Required', icon: '💧', tip: 'Waterdrop/dewdrop notch — glass needs a small V or U-shaped cutout at the top for camera visibility.' };
+    if (n === 'U Notch') return { cut: true, label: 'U-Cut Required', icon: '∪', tip: 'U-shaped notch — glass needs a U-cut at the top. Ensure the cut width matches the notch exactly.' };
+    if (n === 'Wide Notch') return { cut: true, label: 'Wide Cut Required', icon: '▬', tip: 'Wide/M-notch display — glass needs a wide top cutout. Verify the notch width matches the glass cut.' };
+    if (n === 'Dynamic Island') return { cut: false, label: 'No Cut Needed', icon: '💊', tip: 'Dynamic Island (Apple) — uncut glass fits around the capsule-style display area without interference.' };
+    if (n === 'No Notch') return { cut: false, label: 'No Cut Needed', icon: '▭', tip: 'No notch/pop-up/under-display camera — use full-edge coverage glass with no top cutout.' };
+    // Fallback
+    return { cut: false, label: 'No Cut Needed', icon: '▭', tip: 'Full-screen display — no notch cut required on the glass.' };
   };
 
   // Helper: Confidence score (0–100)
@@ -632,10 +633,12 @@ function App() {
                   <label className="block text-xs font-medium text-slate-400 mb-1.5">Notch Type</label>
                   <select name="notch_type" value={manualForm.notch_type} onChange={handleManualChange} className="w-full bg-slate-900/50 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none">
                     <option value="Punch Hole">Punch Hole</option>
-                    <option value="Notch">Notch</option>
+                    <option value="Dual Punch Hole">Dual Punch Hole</option>
                     <option value="Waterdrop">Waterdrop</option>
+                    <option value="U Notch">U Notch</option>
+                    <option value="Wide Notch">Wide Notch</option>
                     <option value="Dynamic Island">Dynamic Island</option>
-                    <option value="Pop-up">Pop-up</option>
+                    <option value="No Notch">No Notch</option>
                   </select>
                 </div>
               </div>

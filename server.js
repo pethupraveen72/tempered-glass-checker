@@ -207,14 +207,24 @@ app.get('/api/search', async (req, res) => {
             screenType = "2.5D";
         }
 
-        // Heuristic for Notch Type
-        let notchType = "Punch Hole";
-        const displaySpec = $prod('[data-spec="displaytype"]').text().toLowerCase() + " " + sizeText.toLowerCase();
+        // Normalize Notch Type — standardized values only
+        const normalizeNotchType = (displayTypeText) => {
+            const t = (displayTypeText || '').toLowerCase();
+            if (t.includes('dynamic island')) return 'Dynamic Island';
+            if (t.includes('dual punch') || t.includes('dual hole') || t.includes('dual camera hole')) return 'Dual Punch Hole';
+            if (t.includes('punch hole') || t.includes('punch-hole') || t.includes('hole-punch') || t.includes('infinity-o') || t.includes('pinhole') || t.includes('pill-shaped cutout')) return 'Punch Hole';
+            if (t.includes('waterdrop') || t.includes('water drop') || t.includes('dewdrop') || t.includes('teardrop')) return 'Waterdrop';
+            if (t.includes('u-shaped') || t.includes('u notch') || t.includes('u-notch') || t.includes('μ-notch')) return 'U Notch';
+            if (t.includes('wide notch') || t.includes('notch') || t.includes('m-notch')) return 'Wide Notch';
+            if (t.includes('pop-up') || t.includes('popup') || t.includes('elevating') || t.includes('motorized')) return 'No Notch';
+            if (t.includes('under-display') || t.includes('under display camera') || t.includes('udc')) return 'No Notch';
+            return 'No Notch'; // Classic bezel / no front camera cutout
+        };
 
-        if (displaySpec.includes('notch') && !displaySpec.includes('hole')) notchType = "Notch";
-        if (displaySpec.includes('dynamic island')) notchType = "Dynamic Island";
-        if (displaySpec.includes('waterdrop')) notchType = "Waterdrop";
-        if (displaySpec.includes('pop-up')) notchType = "Pop-up";
+        const displayTypeText = $prod('[data-spec="displaytype"]').text();
+        const selfieSpec = $prod('[data-spec="cameraprimary"]').text() + ' ' + $prod('[data-spec="cameraother"]').text();
+        const combinedText = displayTypeText + ' ' + selfieSpec;
+        let notchType = normalizeNotchType(combinedText);
 
         // Extract Image URL
         let imageUrl = null;

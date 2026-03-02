@@ -767,5 +767,31 @@
         "image_url": "https://fdn2.gsmarena.com/vv/bigpic/vivo-y37-2024.jpg",
         "display_height_mm": 152.14,
         "display_width_mm": 67.95
+    },
+    {
+        "model": "Samsung Galaxy A20",
+        "brand": "Samsung",
+        "screen_size": 6.4,
+        "height_mm": 158.4,
+        "width_mm": 74.7,
+        "screen_type": "Flat",
+        "notch_type": "U Notch",
+        "resolution": "720 x 1560 pixels",
+        "image_url": "https://fdn2.gsmarena.com/vv/bigpic/samsung-galaxy-a20.jpg",
+        "display_height_mm": 147.6,
+        "display_width_mm": 68.12
+    },
+    {
+        "model": "Samsung Galaxy A30",
+        "brand": "Samsung",
+        "screen_size": 6.4,
+        "height_mm": 158.5,
+        "width_mm": 74.7,
+        "screen_type": "Flat",
+        "notch_type": "U Notch",
+        "resolution": "1080 x 2340 pixels",
+        "image_url": "https://fdn2.gsmarena.com/vv/bigpic/samsung-galaxy-a30.jpg",
+        "display_height_mm": 147.6,
+        "display_width_mm": 68.12
     }
 ]

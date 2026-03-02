@@ -41,6 +41,122 @@ const parseScreenSize = (sizeStr) => {
     return isNaN(size) ? null : size;
 };
 
+// --- MODULE-LEVEL NOTCH NORMALIZER (shared by all scrapers) ---
+const normalizeNotchType = (text) => {
+    const t = (text || '').toLowerCase();
+    if (t.includes('dynamic island')) return 'Dynamic Island';
+    if (t.includes('dual punch') || t.includes('dual hole') || t.includes('dual camera hole')) return 'Dual Punch Hole';
+    if (t.includes('punch hole') || t.includes('punch-hole') || t.includes('hole-punch') ||
+        t.includes('infinity-o') || t.includes('pinhole') || t.includes('pill-shaped')) return 'Punch Hole';
+    if (t.includes('waterdrop') || t.includes('water drop') || t.includes('dewdrop') ||
+        t.includes('teardrop') || t.includes('dot notch') || t.includes('dot-notch') ||
+        t.includes('mini notch') || t.includes('mini-notch') || t.includes('drop notch') ||
+        t.includes('small notch') || t.includes('tiny notch')) return 'Waterdrop';
+    if (t.includes('u-shaped') || t.includes('u notch') || t.includes('u-notch') ||
+        t.includes('\u03bc-notch') || t.includes('u shape')) return 'U Notch';
+    if (t.includes('wide notch') || t.includes('m-notch') || t.includes('notch')) return 'Wide Notch';
+    if (t.includes('pop-up') || t.includes('popup') || t.includes('elevating') ||
+        t.includes('motorized') || t.includes('under-display') ||
+        t.includes('under display camera') || t.includes('udc')) return 'No Notch';
+    return null;
+};
+
+const SCRAPE_HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept-Language': 'en-US,en;q=0.9'
+};
+
+// --- SECONDARY NOTCH SCRAPER 1: 91mobiles.com (India-focused, very explicit labels) ---
+const getNotchFrom91Mobiles = async (brand, model) => {
+    try {
+        const slug = `${brand}-${model}`.toLowerCase()
+            .replace(/[()]/g, '')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/-+/g, '-').replace(/^-|-$/g, '');
+        const url = `https://www.91mobiles.com/${slug}-price-in-india`;
+        console.log(`[Notch:91mobiles] Trying: ${url}`);
+        const res = await axios.get(url, { headers: SCRAPE_HEADERS, timeout: 6000 });
+        const $m = cheerio.load(res.data);
+        // 91mobiles has explicit "Design" and "Camera" rows in spec table
+        const specText = $m('.spec-sheet').text() + ' ' + $m('.phone-specs').text();
+        const result = normalizeNotchType(specText) || normalizeNotchType($m('body').text());
+        if (result) console.log(`[Notch:91mobiles] Detected: ${result}`);
+        return result;
+    } catch (e) {
+        console.log(`[Notch:91mobiles] Failed: ${e.message}`);
+        return null;
+    }
+};
+
+// --- SECONDARY NOTCH SCRAPER 2: Kimovil.com (international, clean spec data) ---
+const getNotchFromKimovil = async (brand, model) => {
+    try {
+        const slug = `${brand}-${model}`.toLowerCase()
+            .replace(/[()]/g, '')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/-+/g, '-').replace(/^-|-$/g, '');
+        const url = `https://www.kimovil.com/en/frequency-checker/${slug}`;
+        console.log(`[Notch:Kimovil] Trying: ${url}`);
+        const res = await axios.get(url, { headers: SCRAPE_HEADERS, timeout: 6000 });
+        const $k = cheerio.load(res.data);
+        // Kimovil has "Selfie camera" section with design info
+        const specText = $k('.phone-detail').text() + ' ' + $k('.section-specs').text();
+        const result = normalizeNotchType(specText) || normalizeNotchType($k('body').text());
+        if (result) console.log(`[Notch:Kimovil] Detected: ${result}`);
+        return result;
+    } catch (e) {
+        console.log(`[Notch:Kimovil] Failed: ${e.message}`);
+        return null;
+    }
+};
+
+// --- SECONDARY NOTCH SCRAPER 3: Nanoreview.net (clean international specs) ---
+const getNotchFromNanoreview = async (brand, model) => {
+    try {
+        const slug = `${brand}-${model}`.toLowerCase()
+            .replace(/[()]/g, '')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/-+/g, '-').replace(/^-|-$/g, '');
+        const url = `https://nanoreview.net/en/phone/${slug}`;
+        console.log(`[Notch:Nanoreview] Trying: ${url}`);
+        const res = await axios.get(url, { headers: SCRAPE_HEADERS, timeout: 6000 });
+        const $n = cheerio.load(res.data);
+        const specText = $n('.specs-table').text() + ' ' + $n('.phone-info').text();
+        const result = normalizeNotchType(specText) || normalizeNotchType($n('body').text());
+        if (result) console.log(`[Notch:Nanoreview] Detected: ${result}`);
+        return result;
+    } catch (e) {
+        console.log(`[Notch:Nanoreview] Failed: ${e.message}`);
+        return null;
+    }
+};
+
+// --- CASCADE: Try all sources in parallel, return first confident result ---
+const detectNotchType = async (gsmArenaText, brand, model) => {
+    // Tier 1: GSMArena data (synchronous — already fetched)
+    const fromGsm = normalizeNotchType(gsmArenaText);
+    if (fromGsm) {
+        console.log(`[Notch] Resolved from GSMArena: ${fromGsm}`);
+        return fromGsm;
+    }
+
+    // Tier 2: Try 3 secondary sites in parallel (fire all at once, use first valid result)
+    console.log(`[Notch] GSMArena inconclusive — trying secondary sites in parallel...`);
+    const results = await Promise.allSettled([
+        getNotchFrom91Mobiles(brand, model),
+        getNotchFromKimovil(brand, model),
+        getNotchFromNanoreview(brand, model)
+    ]);
+
+    for (const r of results) {
+        if (r.status === 'fulfilled' && r.value) return r.value;
+    }
+
+    // Tier 3: Final default — modern smartphones are mostly punch hole
+    console.log(`[Notch] All sources inconclusive — defaulting to Punch Hole`);
+    return 'Punch Hole';
+};
+
 // --- Initialization: Fetch GSMArena Index ---
 const initializeIndex = async () => {
     try {
@@ -207,47 +323,15 @@ app.get('/api/search', async (req, res) => {
             screenType = "2.5D";
         }
 
-        // Normalize Notch Type — standardized values only
-        // Priority order matters: most specific first
-        const normalizeNotchType = (text) => {
-            const t = (text || '').toLowerCase();
-            // Dynamic Island (Apple pill)
-            if (t.includes('dynamic island')) return 'Dynamic Island';
-            // Dual Punch Hole (dual selfie cutout)
-            if (t.includes('dual punch') || t.includes('dual hole') || t.includes('dual camera hole')) return 'Dual Punch Hole';
-            // Punch Hole (single cutout IN the screen)
-            if (t.includes('punch hole') || t.includes('punch-hole') || t.includes('hole-punch') ||
-                t.includes('infinity-o') || t.includes('pinhole') || t.includes('pill-shaped')) return 'Punch Hole';
-            // Waterdrop / Dewdrop / Teardrop (small V notch)
-            if (t.includes('waterdrop') || t.includes('water drop') || t.includes('dewdrop') ||
-                t.includes('teardrop') || t.includes('dot notch') || t.includes('dot-notch') ||
-                t.includes('mini notch') || t.includes('mini-notch') || t.includes('drop notch') ||
-                t.includes('small notch') || t.includes('tiny notch')) return 'Waterdrop';
-            // U-Notch
-            if (t.includes('u-shaped') || t.includes('u notch') || t.includes('u-notch') ||
-                t.includes('μ-notch') || t.includes('u shape')) return 'U Notch';
-            // Wide Notch (catch-all for any remaining "notch" mention)
-            if (t.includes('wide notch') || t.includes('m-notch') || t.includes('notch')) return 'Wide Notch';
-            // Pop-up / motorized / under-display = No Notch
-            if (t.includes('pop-up') || t.includes('popup') || t.includes('elevating') ||
-                t.includes('motorized') || t.includes('under-display') ||
-                t.includes('under display camera') || t.includes('udc')) return 'No Notch';
-            return null; // Unknown — will fallback below
-        };
-
-        // Build a comprehensive text from ALL relevant spec fields + full body
+        // Build comprehensive GSMArena spec text for notch detection
         const displayTypeText = $prod('[data-spec="displaytype"]').text();
         const displayResText = $prod('[data-spec="displayresolution"]').text();
-        // GSMArena separates front camera into its own section — look in full spec table rows
         const allSpecRows = $prod('.specs-list td').map((i, el) => $prod(el).text()).get().join(' ');
-        // Also check image alt text and full body as last resort
         const bodyFull = $prod('body').text();
+        const gsmArenaText = `${displayTypeText} ${displayResText} ${allSpecRows} ${bodyFull}`;
 
-        // Try in order: display spec → all spec rows → full body
-        let notchType = normalizeNotchType(displayTypeText + ' ' + displayResText)
-            || normalizeNotchType(allSpecRows)
-            || normalizeNotchType(bodyFull)
-            || 'Punch Hole'; // Safe default for modern smartphones
+        // Cascade: GSMArena → 91mobiles + Kimovil + Nanoreview (parallel)
+        const notchType = await detectNotchType(gsmArenaText, brand, fullName);
 
         // Extract Image URL
         let imageUrl = null;

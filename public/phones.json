@@ -728,5 +728,31 @@
         "view360_url": "",
         "display_height_mm": 154.52,
         "display_width_mm": 71.32
+    },
+    {
+        "model": "Realme 15 (India)",
+        "brand": "Realme",
+        "screen_size": 6.8,
+        "height_mm": 162.3,
+        "width_mm": 76.2,
+        "screen_type": "Flat",
+        "notch_type": "Punch Hole",
+        "resolution": "1280 x 2800 pixels",
+        "image_url": "https://fdn2.gsmarena.com/vv/bigpic/realme-15.jpg",
+        "display_height_mm": 157.08,
+        "display_width_mm": 71.81
+    },
+    {
+        "model": "vivo Y18e",
+        "brand": "vivo",
+        "screen_size": 6.56,
+        "height_mm": 163.6,
+        "width_mm": 75.6,
+        "screen_type": "Flat",
+        "notch_type": "Waterdrop",
+        "resolution": "720 x 1612 pixels",
+        "image_url": "https://fdn2.gsmarena.com/vv/bigpic/vivo-y18e.jpg",
+        "display_height_mm": 152.14,
+        "display_width_mm": 67.95
     }
 ]

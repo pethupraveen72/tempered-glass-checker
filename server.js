@@ -208,23 +208,46 @@ app.get('/api/search', async (req, res) => {
         }
 
         // Normalize Notch Type — standardized values only
-        const normalizeNotchType = (displayTypeText) => {
-            const t = (displayTypeText || '').toLowerCase();
+        // Priority order matters: most specific first
+        const normalizeNotchType = (text) => {
+            const t = (text || '').toLowerCase();
+            // Dynamic Island (Apple pill)
             if (t.includes('dynamic island')) return 'Dynamic Island';
+            // Dual Punch Hole (dual selfie cutout)
             if (t.includes('dual punch') || t.includes('dual hole') || t.includes('dual camera hole')) return 'Dual Punch Hole';
-            if (t.includes('punch hole') || t.includes('punch-hole') || t.includes('hole-punch') || t.includes('infinity-o') || t.includes('pinhole') || t.includes('pill-shaped cutout')) return 'Punch Hole';
-            if (t.includes('waterdrop') || t.includes('water drop') || t.includes('dewdrop') || t.includes('teardrop')) return 'Waterdrop';
-            if (t.includes('u-shaped') || t.includes('u notch') || t.includes('u-notch') || t.includes('μ-notch')) return 'U Notch';
-            if (t.includes('wide notch') || t.includes('notch') || t.includes('m-notch')) return 'Wide Notch';
-            if (t.includes('pop-up') || t.includes('popup') || t.includes('elevating') || t.includes('motorized')) return 'No Notch';
-            if (t.includes('under-display') || t.includes('under display camera') || t.includes('udc')) return 'No Notch';
-            return 'No Notch'; // Classic bezel / no front camera cutout
+            // Punch Hole (single cutout IN the screen)
+            if (t.includes('punch hole') || t.includes('punch-hole') || t.includes('hole-punch') ||
+                t.includes('infinity-o') || t.includes('pinhole') || t.includes('pill-shaped')) return 'Punch Hole';
+            // Waterdrop / Dewdrop / Teardrop (small V notch)
+            if (t.includes('waterdrop') || t.includes('water drop') || t.includes('dewdrop') ||
+                t.includes('teardrop') || t.includes('dot notch') || t.includes('dot-notch') ||
+                t.includes('mini notch') || t.includes('mini-notch') || t.includes('drop notch') ||
+                t.includes('small notch') || t.includes('tiny notch')) return 'Waterdrop';
+            // U-Notch
+            if (t.includes('u-shaped') || t.includes('u notch') || t.includes('u-notch') ||
+                t.includes('μ-notch') || t.includes('u shape')) return 'U Notch';
+            // Wide Notch (catch-all for any remaining "notch" mention)
+            if (t.includes('wide notch') || t.includes('m-notch') || t.includes('notch')) return 'Wide Notch';
+            // Pop-up / motorized / under-display = No Notch
+            if (t.includes('pop-up') || t.includes('popup') || t.includes('elevating') ||
+                t.includes('motorized') || t.includes('under-display') ||
+                t.includes('under display camera') || t.includes('udc')) return 'No Notch';
+            return null; // Unknown — will fallback below
         };
 
+        // Build a comprehensive text from ALL relevant spec fields + full body
         const displayTypeText = $prod('[data-spec="displaytype"]').text();
-        const selfieSpec = $prod('[data-spec="cameraprimary"]').text() + ' ' + $prod('[data-spec="cameraother"]').text();
-        const combinedText = displayTypeText + ' ' + selfieSpec;
-        let notchType = normalizeNotchType(combinedText);
+        const displayResText = $prod('[data-spec="displayresolution"]').text();
+        // GSMArena separates front camera into its own section — look in full spec table rows
+        const allSpecRows = $prod('.specs-list td').map((i, el) => $prod(el).text()).get().join(' ');
+        // Also check image alt text and full body as last resort
+        const bodyFull = $prod('body').text();
+
+        // Try in order: display spec → all spec rows → full body
+        let notchType = normalizeNotchType(displayTypeText + ' ' + displayResText)
+            || normalizeNotchType(allSpecRows)
+            || normalizeNotchType(bodyFull)
+            || 'Punch Hole'; // Safe default for modern smartphones
 
         // Extract Image URL
         let imageUrl = null;

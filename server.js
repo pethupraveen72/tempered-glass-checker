@@ -96,44 +96,63 @@ const normalizeNotchType = (text) => {
     return null; // Truly unknown
 };
 
-// --- GSMArena comprehensive notch detection (single source) ---
+// --- TIER 1: Brand/model pattern lookup (runs BEFORE text scraping) ---
+const getNotchByModelPattern = (brand, fullName) => {
+    const bm = `${brand} ${fullName}`.toLowerCase();
+
+    // ── SAMSUNG ──────────────────────────────────────────────────────
+    // Infinity-U → U Notch: Galaxy A10/20/30/40, M10/20/30 (2019)
+    if (/samsung.*(a10|a20|a30|a40|m10|m20|m30)(\s|$)/.test(bm)) return 'U Notch';
+    // Infinity-V → Waterdrop: A50, A50s, A30s, A20s, M30s, M21, M31
+    if (/samsung.*(a50|a50s|a30s|a20s|m30s|m21|m31|a21s)(\s|$)/.test(bm)) return 'Waterdrop';
+    // Infinity-O → Punch Hole: S10+, S20+, A51, A71, A52, A72, F41, M51 etc.
+    if (/samsung.*(s10|s20|s21|s22|s23|s24|s25|a51|a71|a52|a72|a53|a73|f41|f62|m51)/.test(bm)) return 'Punch Hole';
+
+    // ── VIVO ──────────────────────────────────────────────────────────
+    // Budget Y-series pre-2022: Waterdrop
+    if (/vivo\s+y(1[1-9]|2[0-9]|3[0-6]|9[0-9])s?(\s|$)/.test(bm) && !bm.includes('pro')) return 'Waterdrop';
+    // iQOO / X / V series: Punch Hole
+    if (/vivo\s+(iqoo|x\d|v\d{2})/.test(bm)) return 'Punch Hole';
+
+    // ── REALME ────────────────────────────────────────────────────────
+    // C-series budget: Waterdrop
+    if (/realme\s+c(11|15|21|21y|25|25s|30)/.test(bm)) return 'Waterdrop';
+    if (/realme\s+c[23](\s|$)/.test(bm)) return 'U Notch';
+
+    // ── APPLE ─────────────────────────────────────────────────────────
+    if (/iphone\s+(x|xs|11|12|13|14)(\s|$|pro|plus|mini|max)/.test(bm)) return 'Wide Notch';
+    if (/iphone\s+(14 pro|15|16|17)/.test(bm)) return 'Dynamic Island';
+
+    // ── ONEPLUS ───────────────────────────────────────────────────────
+    if (/oneplus\s+(6t?|7)(\s|$)/.test(bm) && !bm.includes('pro')) return 'Waterdrop';
+    if (/oneplus\s+7\s+pro/.test(bm)) return 'No Notch';
+
+    return null;
+};
+
+// --- TIER 2: Targeted GSMArena spec fields only (no broad body text) ---
 const detectNotchType = ($prod, brand, fullName) => {
+    // Step 1: Model pattern (fastest, no false positives from related phones)
+    const byPattern = getNotchByModelPattern(brand, fullName);
+    if (byPattern) {
+        console.log(`[Notch] Pattern → "${byPattern}" for ${fullName}`);
+        return byPattern;
+    }
+
+    // Step 2: Only check display type field + meta description
+    // NEVER use full body text — it includes "punch hole" from related phones on the page
     const displayType = $prod('[data-spec="displaytype"]').text();
-    const displayRes = $prod('[data-spec="displayresolution"]').text();
-    const displaySize = $prod('[data-spec="displaysize"]').text();
-    // All spec table rows — catches front camera section, design rows, misc
-    const allSpecRows = $prod('.specs-list td').map((i, el) => $prod(el).text()).get().join(' ');
-    // Page meta description often contains design keywords
-    const metaDesc = $prod('meta[name="description"]').attr('content') || '';
-    // Full body as last resort
-    const bodyText = $prod('body').text();
+    const metaDesc = ($prod('meta[name="description"]').attr('content') || '').slice(0, 500);
 
-    // Build ordered list: narrowest text first (most accurate) → widest last
-    const sources = [
-        displayType + ' ' + displayRes,   // Most targeted GSMArena spec field
-        allSpecRows,                        // All spec table rows (front cam section included)
-        metaDesc,                           // Page meta description
-        bodyText,                           // Full page body (broadest)
-    ];
-
-    for (const src of sources) {
+    for (const src of [displayType, metaDesc]) {
         const result = normalizeNotchType(src);
         if (result) {
-            console.log(`[Notch] Detected "${result}" from GSMArena`);
+            console.log(`[Notch] Spec field → "${result}" for ${fullName}`);
             return result;
         }
     }
 
-    // Intelligent default: check brand+model name patterns for known design eras
-    const nm = (brand + ' ' + fullName).toLowerCase();
-    // Samsung Infinity-U era phones (A series 2019, M series 2019)
-    if (nm.match(/samsung.*(a10|a20|a30|m10|m20|m30)\b/)) return 'U Notch';
-    // Samsung Infinity-V era
-    if (nm.match(/samsung.*(a50s|a30s|a20s|m30s)\b/)) return 'Waterdrop';
-    // vivo Y series budget (2019–2021) typically waterdrop
-    if (nm.match(/vivo\s+y(1[0-9]|2[0-9]|9[0-9])\b/) && !nm.includes('pro')) return 'Waterdrop';
-
-    console.log(`[Notch] Could not detect — defaulting to Punch Hole`);
+    console.log(`[Notch] No match → defaulting to Punch Hole for ${fullName}`);
     return 'Punch Hole';
 };
 

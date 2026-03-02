@@ -793,5 +793,18 @@
         "image_url": "https://fdn2.gsmarena.com/vv/bigpic/samsung-galaxy-a30.jpg",
         "display_height_mm": 147.6,
         "display_width_mm": 68.12
+    },
+    {
+        "model": "Samsung Galaxy A10",
+        "brand": "Samsung",
+        "screen_size": 6.2,
+        "height_mm": 155.6,
+        "width_mm": 75.6,
+        "screen_type": "Flat",
+        "notch_type": "Punch Hole",
+        "resolution": "720 x 1520 pixels",
+        "image_url": "https://fdn2.gsmarena.com/vv/bigpic/samsung-galaxy-a10.jpg",
+        "display_height_mm": 142.32,
+        "display_width_mm": 67.42
     }
 ]

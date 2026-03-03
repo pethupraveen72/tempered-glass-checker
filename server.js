@@ -410,7 +410,27 @@ app.get('/api/search', async (req, res) => {
 
     const bestMatch = candidates[0];
     const bestBrand = brandsMap[bestMatch[0]] || 'Unknown';
-    console.log(`[Search] Best match: ${bestBrand} ${bestMatch[2]} (ID: ${bestMatch[1]})`);
+    const bestMatchFullName = `${bestBrand} ${bestMatch[2]}`;
+    console.log(`[Search] Best match: ${bestMatchFullName} (ID: ${bestMatch[1]})`);
+
+    // --- DB-FIRST LOOKUP: Return from local phones.json if available ---
+    // This avoids scraping entirely for phones already in the DB,
+    // and is critical on Render where GSMArena may block server IPs.
+    if (force !== 'true') {
+        try {
+            const dbData = await fs.readFile(PHONES_DB_PATH, 'utf-8');
+            const phones = JSON.parse(dbData);
+            const normalize = (str) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const queryNorm = normalize(bestMatchFullName);
+            const cached = phones.find(p => normalize(p.model) === queryNorm);
+            if (cached) {
+                console.log(`[Search] Cache hit → returning "${cached.model}" from local DB.`);
+                return res.json(cached);
+            }
+        } catch (dbErr) {
+            console.warn(`[Search] DB read error (non-fatal): ${dbErr.message}`);
+        }
+    }
 
     try {
         // Construct URL using arbitrary slug and ID
@@ -420,7 +440,8 @@ app.get('/api/search', async (req, res) => {
         console.log(`[Search] Scraping URL: ${productUrl}`);
 
         const productResponse = await axios.get(productUrl, {
-            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' }
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' },
+            timeout: 10000
         });
         const $prod = cheerio.load(productResponse.data);
 

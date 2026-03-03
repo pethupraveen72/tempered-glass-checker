@@ -432,22 +432,9 @@ app.get('/api/search', async (req, res) => {
         }
     }
 
-    try {
-        // Construct URL using arbitrary slug and ID
-        const phoneId = bestMatch[1];
-        const productUrl = `https://www.gsmarena.com/a-${phoneId}.php`;
-
-        console.log(`[Search] Scraping URL: ${productUrl}`);
-
-        const productResponse = await axios.get(productUrl, {
-            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' },
-            timeout: 10000
-        });
-        const $prod = cheerio.load(productResponse.data);
-
-        // Extract Name
-        const fullName = $prod('.specs-phone-name-title').text().trim();
-        const brand = fullName.split(' ')[0];
+    // Helper function to extract and save phone features from HTML
+    const parsePhoneHtml = async (html, brand, fullName) => {
+        const $prod = cheerio.load(html);
 
         // Extract Dimensions
         const dimText = $prod('[data-spec="dimensions"]').text();
@@ -501,8 +488,7 @@ app.get('/api/search', async (req, res) => {
         }
 
         if (!dims || !screenSize) {
-            console.log('[Search] Missing critical specs.');
-            return res.status(500).json({ error: 'Specs incomplete' });
+            throw new Error('Specs incomplete');
         }
 
         // Calculate Display Dimensions (MM)
@@ -542,28 +528,17 @@ app.get('/api/search', async (req, res) => {
             display_width_mm: displayWidthMm
         };
 
-        console.log('[Search] Scraped Data:', newPhone);
-
         // Save to DB
         const dbData = await fs.readFile(PHONES_DB_PATH, 'utf-8');
         const phones = JSON.parse(dbData);
 
-        // Normalize string for comparison (remove spaces, lowercase)
         const normalize = (str) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
         const newModelNorm = normalize(newPhone.model);
 
-        const exists = phones.find(p => {
-            const existingNorm = normalize(p.model);
-            // Check for exact match or if one contains the other strictly?
-            // "Motorola Edge 70" vs "Motorola Edge 70 5G" -> normalizing might make them different.
-            // But usually we want to avoid adding if a very similar one exists.
-            // Let's stick to normalized equality for now to be safe, but also check if newPhone is "Nothing Phone (2a)" and existing is "Nothing Phone 2a".
-            return existingNorm === newModelNorm;
-        });
+        const exists = phones.find(p => normalize(p.model) === newModelNorm);
 
         if (!exists || force === 'true') {
             if (exists && force === 'true') {
-                // Update existing
                 const index = phones.findIndex(p => p.model === exists.model);
                 if (index !== -1) {
                     phones[index] = newPhone;
@@ -577,16 +552,163 @@ app.get('/api/search', async (req, res) => {
             console.log('[Search] Saved to local DB.');
         } else {
             console.log('[Search] Phone already in DB (Duplicate prevention).');
-            // Return the EXISTING phone data instead of the new one to ensure consistency?
-            // Yes, let's return the existing one so the frontend uses the stored one.
-            return res.json(exists);
+            return exists;
         }
 
-        res.json(newPhone);
+        return newPhone;
+    };
+
+    let productUrl = '';
+    let brand = '';
+    let fullName = '';
+
+    try {
+        // Construct URL using arbitrary slug and ID
+        const phoneId = bestMatch[1];
+        productUrl = `https://www.gsmarena.com/a-${phoneId}.php`;
+
+        console.log(`[Search] Scraping URL: ${productUrl}`);
+
+        const productResponse = await axios.get(productUrl, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' },
+            timeout: 10000
+        });
+
+        // Extract Name and Brand here just in case parser needs them
+        const $prod = cheerio.load(productResponse.data);
+        fullName = $prod('.specs-phone-name-title').text().trim() || bestMatchFullName;
+        brand = fullName.split(' ')[0] || bestBrand;
+
+        const savedPhone = await parsePhoneHtml(productResponse.data, brand, fullName);
+        res.json(savedPhone);
+
+
 
     } catch (err) {
         console.error('[Search] Error:', err.message);
-        res.status(500).json({ error: 'Scraping failed', details: err.message });
+        // If scraping failed (likely Cloudflare block on Render), tell the frontend to proxy-scrape it
+        res.status(503).json({
+            error: 'Scraping blocked by GSMArena',
+            details: err.message,
+            requireScrape: true,
+            url: productUrl,
+            brand: bestBrand,
+            fullName: bestMatchFullName
+        });
+    }
+});
+
+// --- NEW ENPOINT: Receive Proxy-Scraped HTML ---
+app.post('/api/parse-html', async (req, res) => {
+    try {
+        const { html, brand, fullName, force } = req.body;
+        if (!html) return res.status(400).json({ error: 'HTML payload missing' });
+
+        console.log(`[Parse] Received client-side scraped HTML for: ${fullName}`);
+
+        // Extract Dimensions
+        const $prod = cheerio.load(html);
+        const dimText = $prod('[data-spec="dimensions"]').text();
+        const sizeText = $prod('[data-spec="displaysize"]').text();
+        const dims = parseDimensions(dimText);
+        const screenSize = parseScreenSize(sizeText);
+
+        if (!dims || !screenSize) {
+            return res.status(400).json({ error: 'Failed to parse specs from provided HTML. HTML may be incomplete or a CAPTCHA page.' });
+        }
+
+        // We run the same extraction logic
+        const resolutionText = $prod('[data-spec="displayresolution"]').text();
+        let resolution = "";
+        let aspectRatio = "";
+        if (resolutionText) {
+            const resParts = resolutionText.split(',');
+            resolution = resParts[0].trim();
+            if (resParts.length > 1) {
+                aspectRatio = resParts[1].replace('ratio', '').trim();
+            }
+        }
+
+        let screenType = await getScreenTypeFromKimovil(brand, fullName);
+        if (!screenType) {
+            screenType = "Flat";
+            const bodyText = $prod('body').text().toLowerCase();
+            if (bodyText.includes('curved display') || bodyText.includes('curved screen') || fullName.toLowerCase().includes('edge') || fullName.toLowerCase().includes('curved')) {
+                screenType = "Curved";
+            } else if (bodyText.includes('2.5d')) {
+                screenType = "2.5D";
+            }
+        }
+
+        const notchType = await detectNotchType($prod, brand, fullName);
+
+        let imageUrl = null;
+        const imgElement = $prod('.specs-photo-main img');
+        if (imgElement.length > 0) {
+            imageUrl = imgElement.attr('src');
+            if (imageUrl && !imageUrl.startsWith('http')) {
+                imageUrl = `https://www.gsmarena.com/${imageUrl}`;
+            }
+        }
+
+        let displayHeightMm = null;
+        let displayWidthMm = null;
+        if (resolution && screenSize) {
+            const resMatch = resolution.match(/(\d+)\s*x\s*(\d+)/);
+            if (resMatch) {
+                const w_px = parseInt(resMatch[1]);
+                const h_px = parseInt(resMatch[2]);
+                const widthPx = Math.min(w_px, h_px);
+                const heightPx = Math.max(w_px, h_px);
+                const diagonalIn = screenSize;
+                const diagonalPx = Math.sqrt(Math.pow(widthPx, 2) + Math.pow(heightPx, 2));
+                if (!isNaN(diagonalPx) && diagonalPx > 0) {
+                    const heightIn = (heightPx / diagonalPx) * diagonalIn;
+                    const widthIn = (widthPx / diagonalPx) * diagonalIn;
+                    displayHeightMm = parseFloat((heightIn * 25.4).toFixed(2));
+                    displayWidthMm = parseFloat((widthIn * 25.4).toFixed(2));
+                }
+            }
+        }
+
+        const newPhone = {
+            model: fullName,
+            brand: brand,
+            screen_size: screenSize,
+            height_mm: dims.height,
+            width_mm: dims.width,
+            screen_type: screenType,
+            notch_type: notchType,
+            resolution: resolution,
+            image_url: imageUrl,
+            display_height_mm: displayHeightMm,
+            display_width_mm: displayWidthMm
+        };
+
+        const dbData = await fs.readFile(PHONES_DB_PATH, 'utf-8');
+        const phones = JSON.parse(dbData);
+        const normalize = (str) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const newModelNorm = normalize(newPhone.model);
+
+        const exists = phones.find(p => normalize(p.model) === newModelNorm);
+        if (!exists || force) {
+            if (exists && force) {
+                const index = phones.findIndex(p => p.model === exists.model);
+                if (index !== -1) {
+                    phones[index] = newPhone;
+                }
+            } else {
+                phones.push(newPhone);
+            }
+            await fs.writeFile(PHONES_DB_PATH, JSON.stringify(phones, null, 4));
+            res.json(newPhone);
+        } else {
+            res.json(exists);
+        }
+
+    } catch (err) {
+        console.error('[Parse] Error:', err.message);
+        res.status(500).json({ error: 'HTML Parsing failed', details: err.message });
     }
 });
 

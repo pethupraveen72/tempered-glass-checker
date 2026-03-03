@@ -334,9 +334,7 @@ const initializeIndex = async () => {
 // Run init on start
 initializeIndex();
 
-app.get('/', (req, res) => {
-    res.send('<h1>Glass Compatibility API is running 🚀</h1><p>Use /api/search?model=... to search.</p>');
-});
+// Static files from dist/ are served below via express.static (see end of file)
 
 app.get('/api/search', async (req, res) => {
     const { model, force } = req.query;

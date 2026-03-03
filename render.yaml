@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: tempered-glass-checker
+    runtime: docker
+    plan: free
+    branch: main
+    envVars:
+      - key: NODE_ENV
+        value: production

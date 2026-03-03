@@ -27,6 +27,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/server.js ./server.js
 COPY --from=builder /app/public/phones.json ./public/phones.json
+COPY --from=builder /app/public/fallback_index.json ./public/fallback_index.json
 
 # Expose port (Cloud Run defaults to 8080, but we can config)
 # We configured server.js to listen on 3000, but Cloud Run expects PORT env var usually.

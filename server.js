@@ -162,7 +162,10 @@ const getNotchFrom91Mobiles = async (brand, model) => {
         const result = normalizeNotchType(specText);
         if (result) console.log(`[Notch:91mobiles] Detected: ${result}`);
         return result;
-    } catch (e) { return null; }
+    } catch (e) {
+        console.log(`[Notch:91mobiles] Failed: ${e.message}`);
+        return null;
+    }
 };
 // --- SECONDARY NOTCH SCRAPER 2: Kimovil.com ---
 const getNotchFromKimovil = async (brand, model) => {
@@ -179,7 +182,10 @@ const getNotchFromKimovil = async (brand, model) => {
         const result = normalizeNotchType(specText);
         if (result) console.log(`[Notch:Kimovil] Detected: ${result}`);
         return result;
-    } catch (e) { return null; }
+    } catch (e) {
+        console.log(`[Notch:Kimovil] Failed: ${e.message}`);
+        return null;
+    }
 };
 
 // --- SCREEN TYPE SCRAPER: Kimovil.com ---
@@ -281,10 +287,11 @@ const initializeIndex = async () => {
 
     // Fallback known index path if regex fails
     if (!indexUrl) {
-        // This hash occasionally changes, but better than nothing
         indexUrl = 'https://www.gsmarena.com/quicksearch-82060.jpg';
         console.log(`[Init] Using Fallback Index URL: ${indexUrl}`);
     }
+
+    let loadedFromWeb = false;
 
     try {
         const indexRes = await axios.get(indexUrl, {
@@ -295,13 +302,31 @@ const initializeIndex = async () => {
         if (Array.isArray(indexRes.data) && Array.isArray(indexRes.data[1])) {
             brandsMap = indexRes.data[0];
             phoneIndex = indexRes.data[1];
-            console.log(`[Init] Index loaded successfully. ${phoneIndex.length} phones indexed. Brands loaded: ${Object.keys(brandsMap).length}.`);
-        } else {
-            console.error('[Init] Unexpected index JSON structure.');
+            console.log(`[Init] Web Index loaded successfully. ${phoneIndex.length} phones indexed. Brands loaded: ${Object.keys(brandsMap).length}.`);
+            loadedFromWeb = true;
         }
-
     } catch (err) {
         console.error(`[Init] Failed to load index data from ${indexUrl}: ${err.message}`);
+    }
+
+    // TIER 3 FALLBACK: Load from local file if web fails (e.g. Render IP block)
+    if (!loadedFromWeb) {
+        try {
+            console.log(`[Init] Web fetch failed completely. Falling back to local fallback_index.json...`);
+            const fallbackPath = path.join(__dirname, 'public', 'fallback_index.json');
+            const localData = await fs.readFile(fallbackPath, 'utf8');
+            const indexResData = JSON.parse(localData);
+
+            if (Array.isArray(indexResData) && Array.isArray(indexResData[1])) {
+                brandsMap = indexResData[0];
+                phoneIndex = indexResData[1];
+                console.log(`[Init] Local Fallback Index loaded successfully. ${phoneIndex.length} phones indexed. Brands loaded: ${Object.keys(brandsMap).length}.`);
+            } else {
+                console.error('[Init] Unexpected local fallback index JSON structure.');
+            }
+        } catch (localErr) {
+            console.error(`[Init] CRITICAL ERROR: Could not load local fallback index: ${localErr.message}`);
+        }
     }
 };
 

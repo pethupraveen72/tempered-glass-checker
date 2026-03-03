@@ -40,7 +40,7 @@ function App() {
     e.preventDefault();
     setLoading(true);
     try {
-      const API_BASE = `http://${window.location.hostname}:3000`;
+      const API_BASE = window.location.port === '5173' ? `http://${window.location.hostname}:3000` : '';
       const res = await fetch(`${API_BASE}/api/manual-entry`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -209,7 +209,7 @@ function App() {
     setLoading(true);
     try {
       // Use window.location.hostname to support network access (e.g. phone testing)
-      const API_BASE = `http://${window.location.hostname}:3000`;
+      const API_BASE = window.location.port === '5173' ? `http://${window.location.hostname}:3000` : '';
       const res = await fetch(`${API_BASE}/api/search?model=${encodeURIComponent(query)}`);
       if (!res.ok) throw new Error('Not found');
       const newPhone = await res.json();

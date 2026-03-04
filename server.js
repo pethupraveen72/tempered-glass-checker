@@ -567,11 +567,14 @@ app.get('/api/search', async (req, res) => {
         const phoneId = bestMatch[1];
         productUrl = `https://www.gsmarena.com/a-${phoneId}.php`;
 
-        console.log(`[Search] Scraping URL: ${productUrl}`);
+        const SCRAPER_API_KEY = '0b098ecd11d11ea5337d9e377fb314c3';
+        const scraperUrl = `http://api.scraperapi.com?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(productUrl)}`;
 
-        const productResponse = await axios.get(productUrl, {
-            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' },
-            timeout: 10000
+        console.log(`[Search] Scraping URL via ScraperAPI: ${productUrl}`);
+
+        const productResponse = await axios.get(scraperUrl, {
+            // ScraperAPI might take 10-20 seconds to rotate IPs and load the page
+            timeout: 45000
         });
 
         // Extract Name and Brand here just in case parser needs them
@@ -586,15 +589,7 @@ app.get('/api/search', async (req, res) => {
 
     } catch (err) {
         console.error('[Search] Error:', err.message);
-        // If scraping failed (likely Cloudflare block on Render), tell the frontend to proxy-scrape it
-        res.status(503).json({
-            error: 'Scraping blocked by GSMArena',
-            details: err.message,
-            requireScrape: true,
-            url: productUrl,
-            brand: bestBrand,
-            fullName: bestMatchFullName
-        });
+        res.status(500).json({ error: 'Scraping failed', details: err.message });
     }
 });
 

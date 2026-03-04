@@ -210,47 +210,10 @@ function App() {
     try {
       // Use window.location.hostname to support network access (e.g. phone testing)
       const API_BASE = window.location.port === '5173' ? `http://${window.location.hostname}:3000` : '';
-      let res = await fetch(`${API_BASE}/api/search?model=${encodeURIComponent(query)}`);
+      const res = await fetch(`${API_BASE}/api/search?model=${encodeURIComponent(query)}`);
 
-      let newPhone;
-
-      if (!res.ok) {
-        // Handle GSMArena IP Block Fallback (Render server blocked)
-        if (res.status === 503) {
-          const errData = await res.json();
-          if (errData.requireScrape && errData.url) {
-            console.log("Backend blocked by GSMArena. Falling back to client-side CORS proxy scrape...");
-            showToast("GSMArena blocked server. Trying proxy fallback...", 'success');
-
-            // 1. Fetch raw HTML via CORS proxy (bypasses server IP block)
-            const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(errData.url)}`;
-            const htmlRes = await fetch(proxyUrl);
-
-            if (!htmlRes.ok) throw new Error("CORS proxy scrape failed.");
-            const htmlText = await htmlRes.text();
-
-            // 2. Send raw HTML back to backend for parsing and saving
-            const parseRes = await fetch(`${API_BASE}/api/parse-html`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                html: htmlText,
-                brand: errData.brand,
-                fullName: errData.fullName
-              })
-            });
-
-            if (!parseRes.ok) throw new Error("Backend failed to parse proxy HTML.");
-            newPhone = await parseRes.json();
-          } else {
-            throw new Error(errData.error || 'Server error');
-          }
-        } else {
-          throw new Error('Not found');
-        }
-      } else {
-        newPhone = await res.json();
-      }
+      if (!res.ok) throw new Error('Not found');
+      const newPhone = await res.json();
 
       // Update local state
       setPhones(prev => {

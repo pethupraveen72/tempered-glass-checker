@@ -462,7 +462,7 @@ function App() {
   });
 
   return (
-    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 flex flex-col items-center">
+    <div className="min-h-screen py-6 sm:py-12 px-3 sm:px-6 lg:px-8 flex flex-col items-center">
 
       {/* Toast Notification */}
       {toast && (
@@ -473,20 +473,62 @@ function App() {
         </div>
       )}
 
-      <div className="w-full max-w-2xl space-y-8">
+      <div className="w-full max-w-2xl space-y-5 sm:space-y-8">
         {/* Header */}
-        <div className="text-center">
-          <h1 className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-300 mb-2 drop-shadow-sm">
+        <div className="text-center px-2">
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-300 mb-2 drop-shadow-sm">
             Glass Finder
           </h1>
-          <p className="text-slate-300 tracking-wide font-light">
+          <p className="text-slate-300 tracking-wide font-light text-sm sm:text-base">
             Tempered Glass Compatibility Checker
           </p>
           {phones.length > 0 && (
             <p className="text-xs text-slate-500 mt-2">
-              📱 {phones.length} models in local database
+              📱 {phones.length} models in database
             </p>
           )}
+        </div>
+
+        {/* === SEARCH ONLINE — HERO PLACEMENT === */}
+        <div className="relative w-full">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-2xl blur-xl" />
+          <div className="relative bg-white/5 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-blue-500/20 shadow-2xl">
+            <div className="flex items-center gap-3 mb-3">
+              <span className="p-2 bg-blue-500/20 rounded-xl text-blue-300 text-xl">🌐</span>
+              <div>
+                <h3 className="text-base sm:text-lg font-bold text-white leading-tight">Search Online Database</h3>
+                <p className="text-[11px] text-slate-400">Auto-fetch specs from GSMArena &amp; save to cloud</p>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                className="flex-1 bg-slate-900/70 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500/60 focus:border-transparent outline-none transition-all text-sm"
+                placeholder="e.g. Nothing Phone 2a, Vivo T3..."
+                id="online-search-input"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const query = e.target.value;
+                    if (query) searchOnline(query, (val) => setDeviceModel(val), () => setDeviceQuery(''));
+                  }
+                }}
+              />
+              <button
+                onClick={() => {
+                  const query = document.getElementById('online-search-input').value;
+                  if (query) searchOnline(query, (val) => setDeviceModel(val), () => setDeviceQuery(''));
+                }}
+                disabled={loading}
+                className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-6 py-3 rounded-xl font-semibold transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:scale-100 shadow-lg shadow-blue-500/25 text-sm whitespace-nowrap"
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2">⏳ Searching...</span>
+                ) : (
+                  <span className="flex items-center gap-2">🔍 Search</span>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Brand Filter Bar */}
@@ -518,33 +560,7 @@ function App() {
           </div>
         </div>
 
-        {/* Online Search Section */}
-        <div className="bg-white/5 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-white/10 shadow-xl">
-          <h3 className="text-lg sm:text-xl font-semibold text-white mb-4 flex items-center gap-3">
-            <span className="p-2 bg-blue-500/20 rounded-lg text-blue-300">🌐</span> Search Online Database
-          </h3>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <input
-              type="text"
-              className="flex-1 bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500/50 focus:border-transparent outline-none transition-all"
-              placeholder="e.g. Nothing Phone 2a"
-              id="online-search-input"
-            />
-            <button
-              onClick={() => {
-                const query = document.getElementById('online-search-input').value;
-                if (query) searchOnline(query, (val) => setDeviceModel(val), (val) => setDeviceQuery(''));
-              }}
-              disabled={loading}
-              className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-semibold transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 shadow-lg shadow-blue-500/20"
-            >
-              {loading ? '...' : 'Search'}
-            </button>
-          </div>
-          <p className="text-xs text-slate-400 mt-3 ml-1">
-            Fetches from GSMArena & adds to local DB.
-          </p>
-        </div>
+
 
         {/* Manual Entry Section */}
         <div className="flex flex-col items-center">

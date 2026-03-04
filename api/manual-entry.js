@@ -32,6 +32,7 @@ export default async function handler(req, res) {
             notch_type: body.notch_type || 'Punch Hole',
             resolution: body.resolution || null,
             image_url: body.image_url || null,
+            view360_url: body.view360_url || null,  // fix: was missing from payload
         };
 
         if (!newPhone.model || !newPhone.height_mm || !newPhone.width_mm) {

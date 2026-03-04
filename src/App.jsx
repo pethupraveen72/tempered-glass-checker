@@ -471,9 +471,9 @@ function App() {
         </div>
 
         {/* Brand Filter Bar */}
-        <div className="bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/10 shadow-xl">
+        <div className="bg-white/5 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-white/10 shadow-xl">
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">Filter by Brand</p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex gap-2 sm:gap-3 mb-4 sm:mb-8 overflow-x-auto pb-2 custom-scrollbar snap-x">
             {brandList.map(brand => (
               <button
                 key={brand}
@@ -500,11 +500,11 @@ function App() {
         </div>
 
         {/* Online Search Section */}
-        <div className="bg-white/5 backdrop-blur-md rounded-2xl p-6 border border-white/10 shadow-xl">
-          <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-3">
+        <div className="bg-white/5 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-white/10 shadow-xl">
+          <h3 className="text-lg sm:text-xl font-semibold text-white mb-4 flex items-center gap-3">
             <span className="p-2 bg-blue-500/20 rounded-lg text-blue-300">🌐</span> Search Online Database
           </h3>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <input
               type="text"
               className="flex-1 bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500/50 focus:border-transparent outline-none transition-all"
@@ -663,9 +663,9 @@ function App() {
         </div>
 
         {/* STEP 1: GLASS SELECTION CARD */}
-        <div className="bg-white/5 backdrop-blur-md rounded-2xl p-6 border border-white/10 shadow-xl relative group">
+        <div className="bg-white/5 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-white/10 shadow-xl relative group">
           <div className="absolute top-0 right-0 p-4 opacity-10 font-black text-6xl text-purple-500 pointer-events-none select-none">1</div>
-          <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
+          <h2 className="text-lg sm:text-xl font-bold text-white mb-6 flex items-center gap-3">
             <span className="bg-purple-500 rounded-lg p-1.5 shadow-lg shadow-purple-500/30">
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
             </span>
@@ -675,7 +675,7 @@ function App() {
           {/* Glass Type Selector */}
           <div className="mb-6">
             <label className="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">Compatibility Mode</label>
-            <div className="grid grid-cols-3 gap-2 bg-slate-900/50 p-1.5 rounded-xl border border-white/5">
+            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-2 bg-slate-900/50 p-1.5 rounded-xl border border-white/5">
               {['Type A', 'Type B', 'Type C'].map((type) => (
                 <button
                   key={type}
@@ -759,45 +759,47 @@ function App() {
           </div>
 
           {/* Child Models (Compatible List) */}
-          {glassModel && (
-            <div className="mt-4 p-4 bg-purple-500/5 rounded-xl border border-purple-500/10">
-              <h3 className="text-purple-300 font-bold mb-3 text-xs uppercase tracking-wide flex items-center gap-2">
-                <span>✨</span> Compatible Devices ({getBrandFamily(glassModel.brand)})
-              </h3>
+          {
+            glassModel && (
+              <div className="mt-4 p-4 bg-purple-500/5 rounded-xl border border-purple-500/10">
+                <h3 className="text-purple-300 font-bold mb-3 text-xs uppercase tracking-wide flex items-center gap-2">
+                  <span>✨</span> Compatible Devices ({getBrandFamily(glassModel.brand)})
+                </h3>
 
-              <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
-                {childModels.length > 0 ? (
-                  childModels.map(p => {
-                    const hDiff = glassModel.height_mm - p.height_mm;
-                    const wDiff = glassModel.width_mm - p.width_mm;
-                    const isPerfect = Math.abs(hDiff) <= 0.5 && Math.abs(wDiff) <= 0.5;
-                    const activeClass = isPerfect
-                      ? 'bg-teal-500/20 text-teal-200 border-teal-500/30'
-                      : 'bg-slate-800 text-slate-300 border-white/5';
+                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
+                  {childModels.length > 0 ? (
+                    childModels.map(p => {
+                      const hDiff = glassModel.height_mm - p.height_mm;
+                      const wDiff = glassModel.width_mm - p.width_mm;
+                      const isPerfect = Math.abs(hDiff) <= 0.5 && Math.abs(wDiff) <= 0.5;
+                      const activeClass = isPerfect
+                        ? 'bg-teal-500/20 text-teal-200 border-teal-500/30'
+                        : 'bg-slate-800 text-slate-300 border-white/5';
 
-                    return (
-                      <button
-                        key={p.model}
-                        className={`text-[10px] px-2 py-1 rounded border transition-all hover:bg-white/10 ${activeClass}`}
-                        onClick={() => setDeviceModel(p)}
-                        title={`Click to select as Device`}
-                      >
-                        {p.model} {isPerfect && '★'}
-                      </button>
-                    );
-                  })
-                ) : (
-                  <span className="text-slate-500 italic text-xs">No known compatible models found based on current rules.</span>
-                )}
+                      return (
+                        <button
+                          key={p.model}
+                          className={`text-[10px] px-2 py-1 rounded border transition-all hover:bg-white/10 ${activeClass}`}
+                          onClick={() => setDeviceModel(p)}
+                          title={`Click to select as Device`}
+                        >
+                          {p.model} {isPerfect && '★'}
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <span className="text-slate-500 italic text-xs">No known compatible models found based on current rules.</span>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )
+          }
         </div>
 
         {/* STEP 2: DEVICE SELECTION CARD */}
-        <div className="bg-white/5 backdrop-blur-md rounded-2xl p-6 border border-white/10 shadow-xl relative mt-8">
+        <div className="bg-white/5 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-white/10 shadow-xl relative mt-8">
           <div className="absolute top-0 right-0 p-4 opacity-10 font-black text-6xl text-blue-500 pointer-events-none select-none">2</div>
-          <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
+          <h2 className="text-lg sm:text-xl font-bold text-white mb-6 flex items-center gap-3">
             <span className="bg-blue-500 rounded-lg p-1.5 shadow-lg shadow-blue-500/30">
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
             </span>
@@ -864,392 +866,399 @@ function App() {
           </div>
 
           {/* Live Image Comparison */}
-          {(glassModel || deviceModel) && (
-            <div className="mt-8 pt-8 border-t border-white/5 animate-fade-in">
-              <h3 className="text-center text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Visual Comparison</h3>
-              <div className="flex justify-center items-end gap-2 sm:gap-8 mb-6">
+          {
+            (glassModel || deviceModel) && (
+              <div className="mt-8 pt-8 border-t border-white/5 animate-fade-in">
+                <h3 className="text-center text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Visual Comparison</h3>
+                <div className="flex justify-center items-end gap-2 sm:gap-8 mb-6">
 
-                {/* GLASS PREVIEW */}
-                <div className="text-center w-32 sm:w-40 relative group">
-                  {glassModel?.image_url ? (
-                    <div className="relative">
-                      <img src={glassModel.image_url} alt={glassModel.model} className="w-full h-48 object-contain drop-shadow-2xl transition-transform transform group-hover:scale-105" onError={(e) => e.target.style.display = 'none'} />
-                      <div className="absolute -bottom-2 -right-2 bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-lg">GLASS</div>
-                    </div>
-                  ) : (
-                    <div className="w-full h-48 rounded-xl border-2 border-dashed border-slate-700 flex items-center justify-center text-slate-600 text-xs">Waiting for Glass...</div>
-                  )}
-                  <p className="text-xs text-slate-400 mt-3 font-medium truncate px-2">{glassModel?.model || "Select Glass"}</p>
+                  {/* GLASS PREVIEW */}
+                  <div className="text-center w-32 sm:w-40 relative group">
+                    {glassModel?.image_url ? (
+                      <div className="relative">
+                        <img src={glassModel.image_url} alt={glassModel.model} className="w-full h-48 object-contain drop-shadow-2xl transition-transform transform group-hover:scale-105" onError={(e) => e.target.style.display = 'none'} />
+                        <div className="absolute -bottom-2 -right-2 bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-lg">GLASS</div>
+                      </div>
+                    ) : (
+                      <div className="w-full h-48 rounded-xl border-2 border-dashed border-slate-700 flex items-center justify-center text-slate-600 text-xs">Waiting for Glass...</div>
+                    )}
+                    <p className="text-xs text-slate-400 mt-3 font-medium truncate px-2">{glassModel?.model || "Select Glass"}</p>
+                  </div>
+
+                  {/* VS BADGE */}
+                  <div className="mb-12 text-slate-600 font-black text-xl italic opacity-50">VS</div>
+
+                  {/* DEVICE PREVIEW */}
+                  <div className="text-center w-32 sm:w-40 relative group">
+                    {deviceModel?.image_url ? (
+                      <div className="relative">
+                        <img src={deviceModel.image_url} alt={deviceModel.model} className="w-full h-48 object-contain drop-shadow-2xl transition-transform transform group-hover:scale-105" onError={(e) => e.target.style.display = 'none'} />
+                        <div className="absolute -bottom-2 -right-2 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-lg">DEVICE</div>
+                      </div>
+                    ) : (
+                      <div className="w-full h-48 rounded-xl border-2 border-dashed border-slate-700 flex items-center justify-center text-slate-600 text-xs">Waiting for Device...</div>
+                    )}
+                    <p className="text-xs text-slate-400 mt-3 font-medium truncate px-2">{deviceModel?.model || "Select Device"}</p>
+                  </div>
                 </div>
 
-                {/* VS BADGE */}
-                <div className="mb-12 text-slate-600 font-black text-xl italic opacity-50">VS</div>
-
-                {/* DEVICE PREVIEW */}
-                <div className="text-center w-32 sm:w-40 relative group">
-                  {deviceModel?.image_url ? (
-                    <div className="relative">
-                      <img src={deviceModel.image_url} alt={deviceModel.model} className="w-full h-48 object-contain drop-shadow-2xl transition-transform transform group-hover:scale-105" onError={(e) => e.target.style.display = 'none'} />
-                      <div className="absolute -bottom-2 -right-2 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-lg">DEVICE</div>
-                    </div>
-                  ) : (
-                    <div className="w-full h-48 rounded-xl border-2 border-dashed border-slate-700 flex items-center justify-center text-slate-600 text-xs">Waiting for Device...</div>
-                  )}
-                  <p className="text-xs text-slate-400 mt-3 font-medium truncate px-2">{deviceModel?.model || "Select Device"}</p>
-                </div>
-              </div>
-
-              {/* Zoom Button */}
-              {(glassModel?.image_url || deviceModel?.image_url) && (
-                <div className="flex justify-center">
-                  <button
-                    onClick={() => setShowZoom(true)}
-                    className="bg-white/5 hover:bg-white/10 text-white text-xs px-5 py-2.5 rounded-full border border-white/10 flex items-center gap-2 transition-all backdrop-blur-md"
-                  >
-                    <span>🔍</span> Open Zoom View
-                  </button>
-
-                  {deviceModel && (
+                {/* Zoom Button */}
+                {(glassModel?.image_url || deviceModel?.image_url) && (
+                  <div className="flex justify-center">
                     <button
-                      onClick={() => {
-                        if (deviceModel.view360_url) {
-                          setShow360(true);
-                        } else {
-                          const query = `${deviceModel.brand} ${deviceModel.model} 360 degree view 91mobiles`;
-                          window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
-                        }
-                      }}
-                      className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-200 text-xs px-5 py-2.5 rounded-full border border-blue-500/30 flex items-center gap-2 transition-all backdrop-blur-md"
+                      onClick={() => setShowZoom(true)}
+                      className="bg-white/5 hover:bg-white/10 text-white text-xs px-5 py-2.5 rounded-full border border-white/10 flex items-center gap-2 transition-all backdrop-blur-md"
                     >
-                      <span>🔄</span> {deviceModel.view360_url ? '360° View' : 'Search 360°'}
+                      <span>🔍</span> Open Zoom View
                     </button>
-                  )}
-                </div>
-              )}
 
-              {/* ZOOM MODAL */}
-              {showZoom && (
-                <div className="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-xl flex flex-col items-center justify-center p-4 animate-fade-in" onClick={() => setShowZoom(false)}>
-                  <button className="absolute top-6 right-6 text-white text-4xl hover:text-gray-300 opacity-80 hover:opacity-100 transition-opacity" onClick={() => setShowZoom(false)}>✕</button>
-                  <div className="flex gap-0 w-full max-w-7xl justify-center items-center h-[85vh]" onClick={e => e.stopPropagation()}>
+                    {deviceModel && (
+                      <button
+                        onClick={() => {
+                          if (deviceModel.view360_url) {
+                            setShow360(true);
+                          } else {
+                            const query = `${deviceModel.brand} ${deviceModel.model} 360 degree view 91mobiles`;
+                            window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+                          }
+                        }}
+                        className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-200 text-xs px-5 py-2.5 rounded-full border border-blue-500/30 flex items-center gap-2 transition-all backdrop-blur-md"
+                      >
+                        <span>🔄</span> {deviceModel.view360_url ? '360° View' : 'Search 360°'}
+                      </button>
+                    )}
+                  </div>
+                )}
 
-                    {/* Glass Big */}
-                    <div className="flex flex-col items-center h-full max-w-[50%]">
-                      <h3 className="text-purple-400 font-bold mb-4 text-xl tracking-wider">Glass ({glassModel?.model})</h3>
-                      {glassModel?.image_url ? (
-                        <img src={glassModel.image_url} className="max-w-full max-h-[calc(100%-3rem)] object-contain drop-shadow-2xl" />
-                      ) : <div className="text-slate-500">No Image</div>}
+                {/* ZOOM MODAL */}
+                {showZoom && (
+                  <div className="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-xl flex flex-col items-center justify-center p-4 animate-fade-in" onClick={() => setShowZoom(false)}>
+                    <button className="absolute top-6 right-6 text-white text-4xl hover:text-gray-300 opacity-80 hover:opacity-100 transition-opacity" onClick={() => setShowZoom(false)}>✕</button>
+                    <div className="flex gap-0 w-full max-w-7xl justify-center items-center h-[85vh]" onClick={e => e.stopPropagation()}>
+
+                      {/* Glass Big */}
+                      <div className="flex flex-col items-center h-full max-w-[50%]">
+                        <h3 className="text-purple-400 font-bold mb-4 text-xl tracking-wider">Glass ({glassModel?.model})</h3>
+                        {glassModel?.image_url ? (
+                          <img src={glassModel.image_url} className="max-w-full max-h-[calc(100%-3rem)] object-contain drop-shadow-2xl" />
+                        ) : <div className="text-slate-500">No Image</div>}
+                      </div>
+
+                      {/* Device Big */}
+                      <div className="flex flex-col items-center h-full max-w-[50%] border-l border-white/10 pl-4">
+                        <h3 className="text-blue-400 font-bold mb-4 text-xl tracking-wider">Device ({deviceModel?.model})</h3>
+                        {deviceModel?.image_url ? (
+                          <img src={deviceModel.image_url} className="max-w-full max-h-[calc(100%-3rem)] object-contain drop-shadow-2xl" />
+                        ) : <div className="text-slate-500">No Image</div>}
+                      </div>
+
                     </div>
+                    <p className="text-slate-500 text-sm mt-6 font-medium">Click anywhere to close</p>
+                  </div>
+                )}
 
-                    {/* Device Big */}
-                    <div className="flex flex-col items-center h-full max-w-[50%] border-l border-white/10 pl-4">
-                      <h3 className="text-blue-400 font-bold mb-4 text-xl tracking-wider">Device ({deviceModel?.model})</h3>
-                      {deviceModel?.image_url ? (
-                        <img src={deviceModel.image_url} className="max-w-full max-h-[calc(100%-3rem)] object-contain drop-shadow-2xl" />
-                      ) : <div className="text-slate-500">No Image</div>}
+                {/* 360 View Modal */}
+                {show360 && deviceModel?.view360_url && (
+                  <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center p-4 animate-fade-in" onClick={() => setShow360(false)}>
+                    <button className="absolute top-6 right-6 text-white text-4xl hover:text-gray-300 transition-opacity" onClick={() => setShow360(false)}>✕</button>
+                    <div className="w-full max-w-5xl h-[80vh] bg-white rounded-xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+                      <iframe
+                        src={deviceModel.view360_url}
+                        className="w-full h-full border-0"
+                        title="360 View"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      ></iframe>
                     </div>
-
+                    <div className="mt-4 flex gap-4">
+                      <a href={deviceModel.view360_url} target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300 text-sm underline">
+                        Open in New Tab
+                      </a>
+                    </div>
                   </div>
-                  <p className="text-slate-500 text-sm mt-6 font-medium">Click anywhere to close</p>
-                </div>
-              )}
-
-              {/* 360 View Modal */}
-              {show360 && deviceModel?.view360_url && (
-                <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center p-4 animate-fade-in" onClick={() => setShow360(false)}>
-                  <button className="absolute top-6 right-6 text-white text-4xl hover:text-gray-300 transition-opacity" onClick={() => setShow360(false)}>✕</button>
-                  <div className="w-full max-w-5xl h-[80vh] bg-white rounded-xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
-                    <iframe
-                      src={deviceModel.view360_url}
-                      className="w-full h-full border-0"
-                      title="360 View"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    ></iframe>
-                  </div>
-                  <div className="mt-4 flex gap-4">
-                    <a href={deviceModel.view360_url} target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300 text-sm underline">
-                      Open in New Tab
-                    </a>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+                )}
+              </div>
+            )
+          }
+        </div >
 
         {/* Check Button */}
-        <button
+        < button
           onClick={checkCompatibility}
-          disabled={!glassModel || !deviceModel}
+          disabled={!glassModel || !deviceModel
+          }
           className="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 bg-size-200 hover:bg-pos-100 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed text-white font-black py-5 rounded-2xl shadow-xl shadow-purple-900/40 transform active:scale-[0.98] transition-all duration-300 text-xl tracking-wide uppercase mt-8 border border-white/10"
         >
           Check Compatibility
-        </button>
+        </button >
 
         {/* RESULT CARD */}
-        {result && (
-          <div className={`mt-12 w-full rounded-3xl overflow-hidden shadow-2xl animate-fade-in relative group ${result.isCompatible ? 'shadow-green-500/20' : 'shadow-red-500/20'}`}>
-            <div className={`absolute inset-0 opacity-20 ${result.isCompatible ? 'bg-gradient-to-br from-green-600 to-teal-900' : 'bg-gradient-to-br from-red-600 to-pink-900'}`}></div>
-            <div className="absolute inset-0 backdrop-blur-3xl"></div>
+        {
+          result && (
+            <div className={`mt-12 w-full rounded-3xl overflow-hidden shadow-2xl animate-fade-in relative group ${result.isCompatible ? 'shadow-green-500/20' : 'shadow-red-500/20'}`}>
+              <div className={`absolute inset-0 opacity-20 ${result.isCompatible ? 'bg-gradient-to-br from-green-600 to-teal-900' : 'bg-gradient-to-br from-red-600 to-pink-900'}`}></div>
+              <div className="absolute inset-0 backdrop-blur-3xl"></div>
 
-            <div className="relative p-8 border border-white/10 rounded-3xl">
+              <div className="relative p-8 border border-white/10 rounded-3xl">
 
-              {/* Header Status */}
-              <div className="text-center mb-8">
-                <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-4 border ${result.isCompatible ? 'bg-green-500/20 text-green-300 border-green-500/30' : 'bg-red-500/20 text-red-300 border-red-500/30'}`}>
-                  <span>{glassType} Evaluation</span>
-                </div>
-                <h2 className={`text-4xl md:text-5xl font-black uppercase tracking-tight mb-4 drop-shadow-lg ${result.isCompatible ? 'text-transparent bg-clip-text bg-gradient-to-r from-green-300 to-teal-200' : 'text-transparent bg-clip-text bg-gradient-to-r from-red-300 to-pink-200'}`}>
-                  {result.compatibility_status}
-                </h2>
-                <p className="text-lg text-slate-200 font-light italic max-w-2xl mx-auto leading-relaxed opacity-90">
-                  "{result.reason_message}"
-                </p>
-              </div>
-
-              {/* Confidence Score Bar */}
-              {(() => {
-                const conf = getConfidenceScore(glassModel, deviceModel, result);
-                return conf ? (
-                  <div className="mb-6 bg-black/20 rounded-2xl p-4 border border-white/5">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Fit Confidence</p>
-                      <span className={`text-xs font-bold ${conf.color}`}>{conf.score}% — {conf.label}</span>
-                    </div>
-                    <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                      <div className={`h-2 rounded-full transition-all duration-700 ${conf.bar}`} style={{ width: `${conf.score}%` }}></div>
-                    </div>
+                {/* Header Status */}
+                <div className="text-center mb-8">
+                  <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-4 border ${result.isCompatible ? 'bg-green-500/20 text-green-300 border-green-500/30' : 'bg-red-500/20 text-red-300 border-red-500/30'}`}>
+                    <span>{glassType} Evaluation</span>
                   </div>
-                ) : null;
-              })()}
+                  <h2 className={`text-4xl md:text-5xl font-black uppercase tracking-tight mb-4 drop-shadow-lg ${result.isCompatible ? 'text-transparent bg-clip-text bg-gradient-to-r from-green-300 to-teal-200' : 'text-transparent bg-clip-text bg-gradient-to-r from-red-300 to-pink-200'}`}>
+                    {result.compatibility_status}
+                  </h2>
+                  <p className="text-lg text-slate-200 font-light italic max-w-2xl mx-auto leading-relaxed opacity-90">
+                    "{result.reason_message}"
+                  </p>
+                </div>
 
-              {/* Data Table */}
-              <div className="bg-slate-900/40 rounded-2xl border border-white/5 overflow-hidden">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-white/5 text-xs text-slate-400 uppercase tracking-wider">
-                    <tr>
-                      <th className="px-6 py-4 font-semibold">Specification</th>
-                      <th className="px-6 py-4 font-semibold text-purple-300">Glass Model</th>
-                      <th className="px-6 py-4 font-semibold text-blue-300">Device Model</th>
-                      <th className="px-6 py-4 font-semibold text-right">Difference</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5 text-slate-300">
-                    <tr className="hover:bg-white/5 transition-colors">
-                      <td className="px-6 py-4 font-medium text-white">Body Height</td>
-                      <td className="px-6 py-4">{glassModel.height_mm}mm</td>
-                      <td className="px-6 py-4">{deviceModel.height_mm}mm</td>
-                      <td className={`px-6 py-4 text-right font-bold ${Math.abs(result.hDiff) > 1.0 ? 'text-red-400' : 'text-green-400'}`}>
-                        {result.height_difference}
-                      </td>
-                    </tr>
-                    <tr className="hover:bg-white/5 transition-colors">
-                      <td className="px-6 py-4 font-medium text-white">Body Width</td>
-                      <td className="px-6 py-4">{glassModel.width_mm}mm</td>
-                      <td className="px-6 py-4">{deviceModel.width_mm}mm</td>
-                      <td className={`px-6 py-4 text-right font-bold ${Math.abs(result.wDiff) > 1.0 ? 'text-red-400' : 'text-green-400'}`}>
-                        {result.width_difference}
-                      </td>
-                    </tr>
+                {/* Confidence Score Bar */}
+                {(() => {
+                  const conf = getConfidenceScore(glassModel, deviceModel, result);
+                  return conf ? (
+                    <div className="mb-6 bg-black/20 rounded-2xl p-4 border border-white/5">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Fit Confidence</p>
+                        <span className={`text-xs font-bold ${conf.color}`}>{conf.score}% — {conf.label}</span>
+                      </div>
+                      <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                        <div className={`h-2 rounded-full transition-all duration-700 ${conf.bar}`} style={{ width: `${conf.score}%` }}></div>
+                      </div>
+                    </div>
+                  ) : null;
+                })()}
 
-                    {/* Display Dimensions */}
-                    <tr className="bg-black/20 hover:bg-black/30 transition-colors">
-                      <td className="px-6 py-4 font-medium text-purple-200 pl-8 border-l-4 border-purple-500/30">Display Height</td>
-                      <td className="px-6 py-4 text-slate-400">{glassModel.display_height_mm || '-'}mm</td>
-                      <td className="px-6 py-4 text-slate-400">{deviceModel.display_height_mm || '-'}mm</td>
-                      <td className="px-6 py-4 text-right font-mono text-slate-400">
-                        {glassModel.display_height_mm && deviceModel.display_height_mm
-                          ? (glassModel.display_height_mm - deviceModel.display_height_mm).toFixed(2) + 'mm'
-                          : '-'}
-                      </td>
-                    </tr>
-                    <tr className="bg-black/20 hover:bg-black/30 transition-colors">
-                      <td className="px-6 py-4 font-medium text-purple-200 pl-8 border-l-4 border-purple-500/30">Display Width</td>
-                      <td className="px-6 py-4 text-slate-400">{glassModel.display_width_mm || '-'}mm</td>
-                      <td className="px-6 py-4 text-slate-400">{deviceModel.display_width_mm || '-'}mm</td>
-                      <td className="px-6 py-4 text-right font-mono text-slate-400">
-                        {glassModel.display_width_mm && deviceModel.display_width_mm
-                          ? (glassModel.display_width_mm - deviceModel.display_width_mm).toFixed(2) + 'mm'
-                          : '-'}
-                      </td>
-                    </tr>
+                {/* Data Table */}
+                <div className="bg-slate-900/40 rounded-2xl border border-white/5 overflow-hidden">
+                  <table className="w-full text-sm text-left">
+                    <thead className="bg-white/5 text-xs text-slate-400 uppercase tracking-wider">
+                      <tr>
+                        <th className="px-6 py-4 font-semibold">Specification</th>
+                        <th className="px-6 py-4 font-semibold text-purple-300">Glass Model</th>
+                        <th className="px-6 py-4 font-semibold text-blue-300">Device Model</th>
+                        <th className="px-6 py-4 font-semibold text-right">Difference</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 text-slate-300">
+                      <tr className="hover:bg-white/5 transition-colors">
+                        <td className="px-6 py-4 font-medium text-white">Body Height</td>
+                        <td className="px-6 py-4">{glassModel.height_mm}mm</td>
+                        <td className="px-6 py-4">{deviceModel.height_mm}mm</td>
+                        <td className={`px-6 py-4 text-right font-bold ${Math.abs(result.hDiff) > 1.0 ? 'text-red-400' : 'text-green-400'}`}>
+                          {result.height_difference}
+                        </td>
+                      </tr>
+                      <tr className="hover:bg-white/5 transition-colors">
+                        <td className="px-6 py-4 font-medium text-white">Body Width</td>
+                        <td className="px-6 py-4">{glassModel.width_mm}mm</td>
+                        <td className="px-6 py-4">{deviceModel.width_mm}mm</td>
+                        <td className={`px-6 py-4 text-right font-bold ${Math.abs(result.wDiff) > 1.0 ? 'text-red-400' : 'text-green-400'}`}>
+                          {result.width_difference}
+                        </td>
+                      </tr>
 
-                    <tr className="hover:bg-white/5 transition-colors">
-                      <td className="px-6 py-4 font-medium text-white">Screen Size</td>
-                      <td className="px-6 py-4">{glassModel.screen_size}"</td>
-                      <td className="px-6 py-4">{deviceModel.screen_size}"</td>
-                      <td className="px-6 py-4 text-right font-bold text-slate-400">
-                        {Math.abs(deviceModel.screen_size - glassModel.screen_size).toFixed(2)}"
-                      </td>
-                    </tr>
-                    <tr className="hover:bg-white/5 transition-colors">
-                      <td className="px-6 py-4 font-medium text-white">Screen Type</td>
-                      <td className="px-6 py-4">{glassModel.screen_type}</td>
-                      <td className="px-6 py-4">{deviceModel.screen_type}</td>
-                      <td className={`px-6 py-4 text-right font-bold ${glassModel.screen_type === deviceModel.screen_type ? 'text-green-400' : 'text-red-400'}`}>
-                        {glassModel.screen_type === deviceModel.screen_type ? 'MATCH' : 'MISMATCH'}
-                      </td>
-                    </tr>
-                    <tr className="hover:bg-white/5 transition-colors">
-                      <td className="px-6 py-4 font-medium text-white">Notch Type</td>
-                      <td className="px-6 py-4">{glassModel.notch_type}</td>
-                      <td className="px-6 py-4">{deviceModel.notch_type}</td>
-                      <td className={`px-6 py-4 text-right font-bold ${glassModel.notch_type === deviceModel.notch_type ? 'text-green-400' : 'text-red-400'}`}>
-                        {glassModel.notch_type === deviceModel.notch_type ? 'MATCH' : 'MISMATCH'}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-                {/* Copy Result Button */}
+                      {/* Display Dimensions */}
+                      <tr className="bg-black/20 hover:bg-black/30 transition-colors">
+                        <td className="px-6 py-4 font-medium text-purple-200 pl-8 border-l-4 border-purple-500/30">Display Height</td>
+                        <td className="px-6 py-4 text-slate-400">{glassModel.display_height_mm || '-'}mm</td>
+                        <td className="px-6 py-4 text-slate-400">{deviceModel.display_height_mm || '-'}mm</td>
+                        <td className="px-6 py-4 text-right font-mono text-slate-400">
+                          {glassModel.display_height_mm && deviceModel.display_height_mm
+                            ? (glassModel.display_height_mm - deviceModel.display_height_mm).toFixed(2) + 'mm'
+                            : '-'}
+                        </td>
+                      </tr>
+                      <tr className="bg-black/20 hover:bg-black/30 transition-colors">
+                        <td className="px-6 py-4 font-medium text-purple-200 pl-8 border-l-4 border-purple-500/30">Display Width</td>
+                        <td className="px-6 py-4 text-slate-400">{glassModel.display_width_mm || '-'}mm</td>
+                        <td className="px-6 py-4 text-slate-400">{deviceModel.display_width_mm || '-'}mm</td>
+                        <td className="px-6 py-4 text-right font-mono text-slate-400">
+                          {glassModel.display_width_mm && deviceModel.display_width_mm
+                            ? (glassModel.display_width_mm - deviceModel.display_width_mm).toFixed(2) + 'mm'
+                            : '-'}
+                        </td>
+                      </tr>
+
+                      <tr className="hover:bg-white/5 transition-colors">
+                        <td className="px-6 py-4 font-medium text-white">Screen Size</td>
+                        <td className="px-6 py-4">{glassModel.screen_size}"</td>
+                        <td className="px-6 py-4">{deviceModel.screen_size}"</td>
+                        <td className="px-6 py-4 text-right font-bold text-slate-400">
+                          {Math.abs(deviceModel.screen_size - glassModel.screen_size).toFixed(2)}"
+                        </td>
+                      </tr>
+                      <tr className="hover:bg-white/5 transition-colors">
+                        <td className="px-6 py-4 font-medium text-white">Screen Type</td>
+                        <td className="px-6 py-4">{glassModel.screen_type}</td>
+                        <td className="px-6 py-4">{deviceModel.screen_type}</td>
+                        <td className={`px-6 py-4 text-right font-bold ${glassModel.screen_type === deviceModel.screen_type ? 'text-green-400' : 'text-red-400'}`}>
+                          {glassModel.screen_type === deviceModel.screen_type ? 'MATCH' : 'MISMATCH'}
+                        </td>
+                      </tr>
+                      <tr className="hover:bg-white/5 transition-colors">
+                        <td className="px-6 py-4 font-medium text-white">Notch Type</td>
+                        <td className="px-6 py-4">{glassModel.notch_type}</td>
+                        <td className="px-6 py-4">{deviceModel.notch_type}</td>
+                        <td className={`px-6 py-4 text-right font-bold ${glassModel.notch_type === deviceModel.notch_type ? 'text-green-400' : 'text-red-400'}`}>
+                          {glassModel.notch_type === deviceModel.notch_type ? 'MATCH' : 'MISMATCH'}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  {/* Copy Result Button */}
+                  <div className="mt-6 flex justify-center gap-3">
+                    <button
+                      onClick={copyResult}
+                      className="flex items-center gap-2 px-6 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-semibold text-white border border-white/10 transition-all"
+                    >
+                      📋 Copy Result
+                    </button>
+                    <button
+                      onClick={() => { setResult(null); setGlassModel(null); setDeviceModel(null); setGlassQuery(''); setDeviceQuery(''); }}
+                      className="flex items-center gap-2 px-6 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-sm font-semibold text-slate-400 hover:text-white border border-white/10 transition-all"
+                    >
+                      🔄 New Check
+                    </button>
+                  </div>
+                </div>
+
+                {/* Camera Cut Advisory */}
+                {(() => {
+                  const advice = getCameraCutAdvice(deviceModel.notch_type);
+                  return (
+                    <div className={`mt-4 p-4 rounded-xl border flex gap-3 items-start ${advice.cut ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-teal-500/10 border-teal-500/20'
+                      }`}>
+                      <span className="text-2xl shrink-0">{advice.icon}</span>
+                      <div>
+                        <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${advice.cut ? 'text-yellow-300' : 'text-teal-300'}`}>
+                          📷 Camera Cut Guide — {advice.label}
+                        </p>
+                        <p className="text-xs text-slate-300 leading-relaxed">{advice.tip}</p>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* In-Display FPS Warning */}
+                {getFingerprintWarning(deviceModel) && (
+                  <div className="mt-3 p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl flex gap-3 items-start">
+                    <span className="text-xl shrink-0">👆</span>
+                    <p className="text-xs text-orange-200 leading-relaxed">{getFingerprintWarning(deviceModel)}</p>
+                  </div>
+                )}
+
+                {/* BBK Family Note */}
+                {result.color_code !== 'RED' && getBrandFamily(glassModel.brand) === 'BBK' && getBrandFamily(deviceModel.brand) === 'BBK' && glassModel.brand !== deviceModel.brand && (
+                  <div className="mt-3 p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl flex gap-3 items-start">
+                    <span className="text-xl shrink-0">⭐</span>
+                    <p className="text-xs text-purple-200 leading-relaxed">
+                      <span className="font-bold">BBK Family Cross-Match</span> — {glassModel.brand} and {deviceModel.brand} are both BBK family brands (OPPO/Vivo/Realme/OnePlus/iQOO) and often share identical display dimensions. This is a commonly successful cross-brand fit.
+                    </p>
+                  </div>
+                )}
+
+                {/* Case-Friendly Note */}
+                {result.color_code !== 'RED' && (
+                  <div className="mt-3 p-3 bg-white/5 border border-white/5 rounded-xl flex gap-3 items-start">
+                    <span className="text-base shrink-0">{glassType === 'Type B' ? '⚠️' : '✅'}</span>
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                      {glassType === 'Type B'
+                        ? 'Full-cover (Type B) glass has black borders — may conflict with thick cases. Test case fit after installing.'
+                        : 'Clear (Type A) glass is usually case-friendly — no black borders to conflict with case edges.'}
+                    </p>
+                  </div>
+                )}
+
+                {/* Failure Mode Warnings */}
+                {(() => {
+                  const warns = getFailureWarnings(glassModel, deviceModel, result, glassType);
+                  return warns.length > 0 ? (
+                    <div className="mt-4 space-y-2">
+                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">⚠️ Risk Factors</p>
+                      {warns.map((w, i) => (
+                        <div key={i} className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                          <p className="text-xs text-red-300 leading-relaxed">{w}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null;
+                })()}
+
+                {/* Installation Tips */}
+                {result.color_code !== 'RED' && (() => {
+                  const tips = getInstallTips(deviceModel.notch_type, deviceModel.screen_type, glassType);
+                  return (
+                    <details className="mt-4 group">
+                      <summary className="cursor-pointer text-xs font-semibold text-slate-400 uppercase tracking-wider hover:text-white transition-colors select-none">
+                        📋 Installation Tips ({tips.length} steps) ▸
+                      </summary>
+                      <div className="mt-3 space-y-2 pl-2">
+                        {tips.map((tip, i) => (
+                          <div key={i} className="flex gap-2.5 items-start">
+                            <span className="text-xs font-bold text-slate-500 shrink-0 mt-0.5">{i + 1}.</span>
+                            <p className="text-xs text-slate-300 leading-relaxed">{tip}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  );
+                })()}
+
+                {/* Copy Result + New Check */}
                 <div className="mt-6 flex justify-center gap-3">
-                  <button
-                    onClick={copyResult}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-semibold text-white border border-white/10 transition-all"
-                  >
+                  <button onClick={copyResult} className="flex items-center gap-2 px-6 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-semibold text-white border border-white/10 transition-all">
                     📋 Copy Result
                   </button>
-                  <button
-                    onClick={() => { setResult(null); setGlassModel(null); setDeviceModel(null); setGlassQuery(''); setDeviceQuery(''); }}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-sm font-semibold text-slate-400 hover:text-white border border-white/10 transition-all"
-                  >
+                  <button onClick={() => { setResult(null); setGlassModel(null); setDeviceModel(null); setGlassQuery(''); setDeviceQuery(''); }} className="flex items-center gap-2 px-6 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-sm font-semibold text-slate-400 hover:text-white border border-white/10 transition-all">
                     🔄 New Check
                   </button>
                 </div>
               </div>
-
-              {/* Camera Cut Advisory */}
-              {(() => {
-                const advice = getCameraCutAdvice(deviceModel.notch_type);
-                return (
-                  <div className={`mt-4 p-4 rounded-xl border flex gap-3 items-start ${advice.cut ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-teal-500/10 border-teal-500/20'
-                    }`}>
-                    <span className="text-2xl shrink-0">{advice.icon}</span>
-                    <div>
-                      <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${advice.cut ? 'text-yellow-300' : 'text-teal-300'}`}>
-                        📷 Camera Cut Guide — {advice.label}
-                      </p>
-                      <p className="text-xs text-slate-300 leading-relaxed">{advice.tip}</p>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* In-Display FPS Warning */}
-              {getFingerprintWarning(deviceModel) && (
-                <div className="mt-3 p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl flex gap-3 items-start">
-                  <span className="text-xl shrink-0">👆</span>
-                  <p className="text-xs text-orange-200 leading-relaxed">{getFingerprintWarning(deviceModel)}</p>
-                </div>
-              )}
-
-              {/* BBK Family Note */}
-              {result.color_code !== 'RED' && getBrandFamily(glassModel.brand) === 'BBK' && getBrandFamily(deviceModel.brand) === 'BBK' && glassModel.brand !== deviceModel.brand && (
-                <div className="mt-3 p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl flex gap-3 items-start">
-                  <span className="text-xl shrink-0">⭐</span>
-                  <p className="text-xs text-purple-200 leading-relaxed">
-                    <span className="font-bold">BBK Family Cross-Match</span> — {glassModel.brand} and {deviceModel.brand} are both BBK family brands (OPPO/Vivo/Realme/OnePlus/iQOO) and often share identical display dimensions. This is a commonly successful cross-brand fit.
-                  </p>
-                </div>
-              )}
-
-              {/* Case-Friendly Note */}
-              {result.color_code !== 'RED' && (
-                <div className="mt-3 p-3 bg-white/5 border border-white/5 rounded-xl flex gap-3 items-start">
-                  <span className="text-base shrink-0">{glassType === 'Type B' ? '⚠️' : '✅'}</span>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    {glassType === 'Type B'
-                      ? 'Full-cover (Type B) glass has black borders — may conflict with thick cases. Test case fit after installing.'
-                      : 'Clear (Type A) glass is usually case-friendly — no black borders to conflict with case edges.'}
-                  </p>
-                </div>
-              )}
-
-              {/* Failure Mode Warnings */}
-              {(() => {
-                const warns = getFailureWarnings(glassModel, deviceModel, result, glassType);
-                return warns.length > 0 ? (
-                  <div className="mt-4 space-y-2">
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">⚠️ Risk Factors</p>
-                    {warns.map((w, i) => (
-                      <div key={i} className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
-                        <p className="text-xs text-red-300 leading-relaxed">{w}</p>
-                      </div>
-                    ))}
-                  </div>
-                ) : null;
-              })()}
-
-              {/* Installation Tips */}
-              {result.color_code !== 'RED' && (() => {
-                const tips = getInstallTips(deviceModel.notch_type, deviceModel.screen_type, glassType);
-                return (
-                  <details className="mt-4 group">
-                    <summary className="cursor-pointer text-xs font-semibold text-slate-400 uppercase tracking-wider hover:text-white transition-colors select-none">
-                      📋 Installation Tips ({tips.length} steps) ▸
-                    </summary>
-                    <div className="mt-3 space-y-2 pl-2">
-                      {tips.map((tip, i) => (
-                        <div key={i} className="flex gap-2.5 items-start">
-                          <span className="text-xs font-bold text-slate-500 shrink-0 mt-0.5">{i + 1}.</span>
-                          <p className="text-xs text-slate-300 leading-relaxed">{tip}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </details>
-                );
-              })()}
-
-              {/* Copy Result + New Check */}
-              <div className="mt-6 flex justify-center gap-3">
-                <button onClick={copyResult} className="flex items-center gap-2 px-6 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-semibold text-white border border-white/10 transition-all">
-                  📋 Copy Result
-                </button>
-                <button onClick={() => { setResult(null); setGlassModel(null); setDeviceModel(null); setGlassQuery(''); setDeviceQuery(''); }} className="flex items-center gap-2 px-6 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-sm font-semibold text-slate-400 hover:text-white border border-white/10 transition-all">
-                  🔄 New Check
-                </button>
-              </div>
             </div>
-          </div>
-        )}
+          )
+        }
 
         {/* Recent History */}
-        {history.length > 0 && (
-          <div className="mt-8 bg-white/5 backdrop-blur-md rounded-2xl p-5 border border-white/10 shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">🗓️ Recent Checks</p>
-              <button onClick={() => { setHistory([]); localStorage.removeItem('glassCheckerHistory'); }} className="text-[10px] text-slate-600 hover:text-red-400 transition-colors">Clear</button>
-            </div>
-            <div className="space-y-2">
-              {history.map((h, i) => {
-                const colorMap = { GREEN: 'bg-green-500/20 text-green-300 border-green-500/30', TEAL: 'bg-teal-500/20 text-teal-300 border-teal-500/30', YELLOW: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30', RED: 'bg-red-500/20 text-red-300 border-red-500/30' };
-                return (
-                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-slate-900/40 hover:bg-slate-900/60 transition-colors cursor-pointer group"
-                    onClick={() => {
-                      const g = phones.find(p => p.model === h.glass.model);
-                      const d = phones.find(p => p.model === h.device.model);
-                      if (g && d) { setGlassModel(g); setDeviceModel(d); setResult(null); }
-                    }}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-semibold text-white truncate">
-                        <span className="text-purple-300">{h.glass.model}</span>
-                        <span className="text-slate-500 mx-1">→</span>
-                        <span className="text-blue-300">{h.device.model}</span>
+        {
+          history.length > 0 && (
+            <div className="mt-8 bg-white/5 backdrop-blur-md rounded-2xl p-5 border border-white/10 shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">🗓️ Recent Checks</p>
+                <button onClick={() => { setHistory([]); localStorage.removeItem('glassCheckerHistory'); }} className="text-[10px] text-slate-600 hover:text-red-400 transition-colors">Clear</button>
+              </div>
+              <div className="space-y-2">
+                {history.map((h, i) => {
+                  const colorMap = { GREEN: 'bg-green-500/20 text-green-300 border-green-500/30', TEAL: 'bg-teal-500/20 text-teal-300 border-teal-500/30', YELLOW: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30', RED: 'bg-red-500/20 text-red-300 border-red-500/30' };
+                  return (
+                    <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-slate-900/40 hover:bg-slate-900/60 transition-colors cursor-pointer group"
+                      onClick={() => {
+                        const g = phones.find(p => p.model === h.glass.model);
+                        const d = phones.find(p => p.model === h.device.model);
+                        if (g && d) { setGlassModel(g); setDeviceModel(d); setResult(null); }
+                      }}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-semibold text-white truncate">
+                          <span className="text-purple-300">{h.glass.model}</span>
+                          <span className="text-slate-500 mx-1">→</span>
+                          <span className="text-blue-300">{h.device.model}</span>
+                        </div>
+                        <div className="text-[10px] text-slate-600 mt-0.5">{h.ts}</div>
                       </div>
-                      <div className="text-[10px] text-slate-600 mt-0.5">{h.ts}</div>
+                      <span className={`text-[9px] font-bold px-2 py-1 rounded-full border shrink-0 ${colorMap[h.color] || 'bg-slate-700 text-slate-300 border-slate-600'}`}>
+                        {h.status.replace('COMPATIBLE', '✓ OK').replace('NOT COMPATIBLE', '✗ NO').replace('CAUTION: CHECK BEZELS', '⚠ CHECK').replace('PERFECT FIT', '★ PERFECT')}
+                      </span>
                     </div>
-                    <span className={`text-[9px] font-bold px-2 py-1 rounded-full border shrink-0 ${colorMap[h.color] || 'bg-slate-700 text-slate-300 border-slate-600'}`}>
-                      {h.status.replace('COMPATIBLE', '✓ OK').replace('NOT COMPATIBLE', '✗ NO').replace('CAUTION: CHECK BEZELS', '⚠ CHECK').replace('PERFECT FIT', '★ PERFECT')}
-                    </span>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
-    </div>
+          )
+        }
+      </div >
+    </div >
   );
 }
 

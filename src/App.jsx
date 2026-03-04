@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import GlassVisualizer from './components/GlassVisualizer';
+import { supabase } from './supabaseClient';
 
 function App() {
   const [phones, setPhones] = useState([]);
@@ -75,10 +77,25 @@ function App() {
   };
 
   useEffect(() => {
-    fetch('/phones.json')
-      .then(res => res.json())
-      .then(data => setPhones(data))
-      .catch(err => console.error("Failed to load phone data", err));
+    const loadPhones = async () => {
+      try {
+        console.log("[Init] Fetching phones from Supabase...");
+        const { data, error } = await supabase
+          .from('phones')
+          .select('*')
+          .order('model', { ascending: true });
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          setPhones(data);
+          console.log(`[Init] Supabase loaded ${data.length} phones successfully.`);
+        }
+      } catch (err) {
+        console.error('Error loading from Supabase:', err);
+      }
+    };
+    loadPhones();
   }, []);
 
   // Toast helper — auto-dismiss after 3s

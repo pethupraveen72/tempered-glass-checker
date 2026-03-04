@@ -562,141 +562,6 @@ function App() {
 
 
 
-        {/* Manual Entry Section */}
-        <div className="flex flex-col items-center">
-          <button
-            onClick={() => setShowManualForm(!showManualForm)}
-            className="text-sm font-medium text-purple-300 hover:text-purple-200 transition-colors flex items-center gap-2 py-2 px-4 rounded-lg hover:bg-purple-500/10"
-          >
-            {showManualForm ? 'Hide Manual Form' : '+ Add/Edit Manual Model'}
-          </button>
-
-          {showManualForm && (
-            <form onSubmit={handleManualSubmit} className="mt-6 w-full bg-white/5 backdrop-blur-md p-6 rounded-2xl border border-white/10 shadow-2xl animate-fade-in relative z-10">
-              <h3 className="text-lg font-semibold text-white mb-6 border-b border-white/10 pb-4">Manual Model Entry</h3>
-
-              {/* Edit Existing Search */}
-              <div className="mb-6 relative">
-                <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Load Existing Data</label>
-                <input
-                  type="text"
-                  placeholder="🔍 Search model to edit..."
-                  className="w-full bg-slate-900/50 border border-purple-500/30 rounded-xl px-4 py-2.5 text-white text-sm focus:ring-2 focus:ring-purple-500/50 outline-none placeholder-slate-500"
-                  value={editQuery}
-                  onChange={(e) => setEditQuery(e.target.value)}
-                />
-                {editQuery && (
-                  <div className="absolute w-full bg-slate-800 border border-slate-600 max-h-40 overflow-y-auto rounded-xl shadow-xl left-0 top-full mt-1 z-50">
-                    {phones.filter(p => p.model.toLowerCase().includes(editQuery.toLowerCase())).slice(0, 10).map(p => (
-                      <div
-                        key={p.model}
-                        className="p-3 text-sm text-slate-300 hover:bg-slate-700 cursor-pointer border-b border-slate-700/50 last:border-0"
-                        onClick={() => {
-                          setManualForm({
-                            model: p.model,
-                            brand: p.brand,
-                            height_mm: p.height_mm || '',
-                            width_mm: p.width_mm || '',
-                            screen_size: p.screen_size || '',
-                            resolution: p.resolution || '',
-                            screen_type: p.screen_type || 'Flat',
-                            notch_type: p.notch_type || 'Punch Hole',
-                            image_url: p.image_url || '',
-                            view360_url: p.view360_url || ''
-                          });
-                          setEditQuery('');
-                        }}
-                      >
-                        <span className="font-bold text-white">{p.brand}</span> {p.model}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Model Name *</label>
-                  <input required name="model" value={manualForm.model} onChange={handleManualChange} placeholder="e.g. My Phone Pro" className="w-full bg-slate-900/50 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Brand *</label>
-                  <input required name="brand" value={manualForm.brand} onChange={handleManualChange} placeholder="e.g. BrandX" className="w-full bg-slate-900/50 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4 mb-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Height (mm) *</label>
-                  <input required type="number" step="0.01" name="height_mm" value={manualForm.height_mm} onChange={handleManualChange} placeholder="160.5" className="w-full bg-slate-900/50 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Width (mm) *</label>
-                  <input required type="number" step="0.01" name="width_mm" value={manualForm.width_mm} onChange={handleManualChange} placeholder="75.2" className="w-full bg-slate-900/50 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Screen (inch) *</label>
-                  <input required type="number" step="0.1" name="screen_size" value={manualForm.screen_size} onChange={handleManualChange} placeholder="6.7" className="w-full bg-slate-900/50 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Resolution</label>
-                  <input name="resolution" value={manualForm.resolution} onChange={handleManualChange} placeholder="1080 x 2400" className="w-full bg-slate-900/50 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Image URL</label>
-                  <input name="image_url" value={manualForm.image_url} onChange={handleManualChange} placeholder="https://..." className="w-full bg-slate-900/50 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
-                </div>
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">360° View URL (Optional)</label>
-                <input name="view360_url" value={manualForm.view360_url || ''} onChange={handleManualChange} placeholder="https://... (Youtube/Sketchfab/91mobiles)" className="w-full bg-slate-900/50 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Screen Type</label>
-                  <select name="screen_type" value={manualForm.screen_type} onChange={handleManualChange} className="w-full bg-slate-900/50 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none">
-                    <option value="Flat">Flat</option>
-                    <option value="Curved">Curved</option>
-                    <option value="2.5D">2.5D</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Notch Type</label>
-                  <select name="notch_type" value={manualForm.notch_type} onChange={handleManualChange} className="w-full bg-slate-900/50 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none">
-                    <option value="Punch Hole">Punch Hole</option>
-                    <option value="Dual Punch Hole">Dual Punch Hole</option>
-                    <option value="Waterdrop">Waterdrop</option>
-                    <option value="U Notch">U Notch</option>
-                    <option value="Wide Notch">Wide Notch</option>
-                    <option value="Dynamic Island">Dynamic Island</option>
-                    <option value="No Notch">No Notch</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">Glass Thickness <span className="text-slate-600">(select if known)</span></label>
-                <select name="glass_thickness" value={manualForm.glass_thickness || ''} onChange={handleManualChange} className="w-full bg-slate-900/50 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none">
-                  <option value="">Unknown</option>
-                  <option value="0.2">0.2mm — Ultra-thin</option>
-                  <option value="0.3">0.3mm — Standard</option>
-                  <option value="0.33">0.33mm — Most common</option>
-                  <option value="0.4">0.4mm — Thick (may block FPS)</option>
-                </select>
-              </div>
-
-              <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-green-900/20">
-                {loading ? 'Saving...' : 'Save Model'}
-              </button>
-            </form>
-          )}
-        </div>
-
         {/* STEP 1: GLASS SELECTION CARD */}
         <div className="bg-white/5 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-white/10 shadow-xl relative group">
           <div className="absolute top-0 right-0 p-4 opacity-10 font-black text-6xl text-purple-500 pointer-events-none select-none">1</div>
@@ -1295,7 +1160,191 @@ function App() {
           )
         }
       </div >
+
+      {/* === FIXED FAB — Add/Edit Manual Model === */}
+      <button
+        onClick={() => setShowManualForm(true)}
+        title="Add or Edit a Phone Model"
+        className="fixed bottom-6 right-5 z-40 flex items-center gap-2 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-bold rounded-full shadow-2xl shadow-purple-900/50 transition-all hover:scale-105 active:scale-95 py-3 px-4 border border-purple-400/30"
+      >
+        <span className="text-lg leading-none">✏️</span>
+        <span className="text-sm hidden sm:inline">Add / Edit Model</span>
+        <span className="text-sm sm:hidden">Edit</span>
+      </button>
+
+      {/* === SLIDE-UP MODAL DRAWER === */}
+      {showManualForm && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowManualForm(false)}
+          />
+
+          {/* Drawer */}
+          <div className="fixed bottom-0 left-0 right-0 z-50 max-h-[93dvh] overflow-y-auto rounded-t-3xl bg-slate-900 border-t border-white/10 shadow-2xl animate-slide-up">
+            {/* Drag Handle */}
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 bg-white/20 rounded-full" />
+            </div>
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 sticky top-0 bg-slate-900 z-10">
+              <div className="flex items-center gap-3">
+                <span className="p-2 bg-purple-500/20 rounded-xl text-purple-300">✏️</span>
+                <div>
+                  <h3 className="text-base font-bold text-white">Add / Edit Model</h3>
+                  <p className="text-[11px] text-slate-400">Manual database entry</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowManualForm(false)}
+                className="p-2 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Form Body */}
+            <form onSubmit={handleManualSubmit} className="p-5 space-y-4">
+
+              {/* Load Existing */}
+              <div className="relative">
+                <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Load Existing Data to Edit</label>
+                <input
+                  type="text"
+                  placeholder="🔍 Search model to edit..."
+                  className="w-full bg-slate-800 border border-purple-500/30 rounded-xl px-4 py-2.5 text-white text-sm focus:ring-2 focus:ring-purple-500/50 outline-none placeholder-slate-500"
+                  value={editQuery}
+                  onChange={(e) => setEditQuery(e.target.value)}
+                />
+                {editQuery && (
+                  <div className="absolute w-full bg-slate-800 border border-slate-600 max-h-40 overflow-y-auto rounded-xl shadow-xl left-0 top-full mt-1 z-50">
+                    {phones.filter(p => p.model.toLowerCase().includes(editQuery.toLowerCase())).slice(0, 10).map(p => (
+                      <div
+                        key={p.model}
+                        className="p-3 text-sm text-slate-300 hover:bg-slate-700 cursor-pointer border-b border-slate-700/50 last:border-0"
+                        onClick={() => {
+                          setManualForm({
+                            model: p.model,
+                            brand: p.brand,
+                            height_mm: p.height_mm || '',
+                            width_mm: p.width_mm || '',
+                            screen_size: p.screen_size || '',
+                            resolution: p.resolution || '',
+                            screen_type: p.screen_type || 'Flat',
+                            notch_type: p.notch_type || 'Punch Hole',
+                            image_url: p.image_url || '',
+                            view360_url: p.view360_url || ''
+                          });
+                          setEditQuery('');
+                        }}
+                      >
+                        <span className="font-bold text-white">{p.brand}</span> {p.model}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Model + Brand */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Model Name *</label>
+                  <input required name="model" value={manualForm.model} onChange={handleManualChange} placeholder="e.g. My Phone Pro" className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Brand *</label>
+                  <input required name="brand" value={manualForm.brand} onChange={handleManualChange} placeholder="e.g. Samsung" className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
+                </div>
+              </div>
+
+              {/* Height + Width + Screen */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Height (mm) *</label>
+                  <input required type="number" step="0.01" name="height_mm" value={manualForm.height_mm} onChange={handleManualChange} placeholder="160.5" className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Width (mm) *</label>
+                  <input required type="number" step="0.01" name="width_mm" value={manualForm.width_mm} onChange={handleManualChange} placeholder="75.2" className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
+                </div>
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Screen (inch) *</label>
+                  <input required type="number" step="0.1" name="screen_size" value={manualForm.screen_size} onChange={handleManualChange} placeholder="6.7" className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
+                </div>
+              </div>
+
+              {/* Resolution + Image */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Resolution</label>
+                  <input name="resolution" value={manualForm.resolution} onChange={handleManualChange} placeholder="1080 x 2400" className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Image URL</label>
+                  <input name="image_url" value={manualForm.image_url} onChange={handleManualChange} placeholder="https://..." className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
+                </div>
+              </div>
+
+              {/* 360 URL */}
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1.5">360° View URL <span className="text-slate-600">(Optional)</span></label>
+                <input name="view360_url" value={manualForm.view360_url || ''} onChange={handleManualChange} placeholder="https://... (YouTube/Sketchfab)" className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
+              </div>
+
+              {/* Screen Type + Notch */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Screen Type</label>
+                  <select name="screen_type" value={manualForm.screen_type} onChange={handleManualChange} className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none">
+                    <option value="Flat">Flat</option>
+                    <option value="Curved">Curved</option>
+                    <option value="2.5D">2.5D</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Notch Type</label>
+                  <select name="notch_type" value={manualForm.notch_type} onChange={handleManualChange} className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none">
+                    <option value="Punch Hole">Punch Hole</option>
+                    <option value="Dual Punch Hole">Dual Punch Hole</option>
+                    <option value="Waterdrop">Waterdrop</option>
+                    <option value="U Notch">U Notch</option>
+                    <option value="Wide Notch">Wide Notch</option>
+                    <option value="Dynamic Island">Dynamic Island</option>
+                    <option value="No Notch">No Notch</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Glass Thickness */}
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1.5">Glass Thickness <span className="text-slate-600">(select if known)</span></label>
+                <select name="glass_thickness" value={manualForm.glass_thickness || ''} onChange={handleManualChange} className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none">
+                  <option value="">Unknown</option>
+                  <option value="0.2">0.2mm — Ultra-thin</option>
+                  <option value="0.3">0.3mm — Standard</option>
+                  <option value="0.33">0.33mm — Most common</option>
+                  <option value="0.4">0.4mm — Thick (may block FPS)</option>
+                </select>
+              </div>
+
+              {/* Submit + Cancel */}
+              <div className="flex gap-3 pt-2 pb-safe">
+                <button type="submit" disabled={loading} className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-green-900/20 disabled:opacity-50">
+                  {loading ? '⏳ Saving...' : '✅ Save Model'}
+                </button>
+                <button type="button" onClick={() => setShowManualForm(false)} className="px-5 py-3 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-xl border border-white/10 transition-all font-semibold text-sm">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </>
+      )}
+
     </div >
+
   );
 }
 

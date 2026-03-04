@@ -89,9 +89,12 @@ function App() {
         if (data && data.length > 0) {
           setPhones(data);
           console.log(`[Init] Supabase loaded ${data.length} phones successfully.`);
+        } else {
+          showToast(`Database connected, but 0 phones found! Check Supabase RLS policies.`, 'error');
         }
       } catch (err) {
         console.error('Error loading from Supabase:', err);
+        showToast(`DB Error: ${err.message || "Failed to fetch from Supabase. Check env vars."}`, 'error');
       }
     };
     loadPhones();

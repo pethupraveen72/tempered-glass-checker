@@ -17,6 +17,7 @@ function App() {
   const [editQuery, setEditQuery] = useState('');
   const [showZoom, setShowZoom] = useState(false);
   const [show360, setShow360] = useState(false);
+  const [show360Source, setShow360Source] = useState('device'); // 'glass' | 'device'
 
   // Manual Entry State
   const [showManualForm, setShowManualForm] = useState(false);
@@ -812,10 +813,32 @@ function App() {
                       <span>🔍</span> Open Zoom View
                     </button>
 
+                    {/* Glass Model 360 button */}
+                    {glassModel && (
+                      <button
+                        onClick={() => {
+                          if (glassModel.view360_url) {
+                            setShow360Source('glass');
+                            setShow360(true);
+                          } else {
+                            const query = `${glassModel.brand} ${glassModel.model} 360 degree view 91mobiles`;
+                            window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+                          }
+                        }}
+                        className="bg-purple-600/20 hover:bg-purple-600/30 text-purple-200 text-xs px-5 py-2.5 rounded-full border border-purple-500/30 flex items-center gap-2 transition-all backdrop-blur-md"
+                      >
+                        <span>🔄</span>
+                        <span className="text-purple-400 font-bold text-[10px] mr-0.5">Glass</span>
+                        {glassModel.view360_url ? '360° View' : 'Search 360°'}
+                      </button>
+                    )}
+
+                    {/* Device Model 360 button */}
                     {deviceModel && (
                       <button
                         onClick={() => {
                           if (deviceModel.view360_url) {
+                            setShow360Source('device');
                             setShow360(true);
                           } else {
                             const query = `${deviceModel.brand} ${deviceModel.model} 360 degree view 91mobiles`;
@@ -824,7 +847,9 @@ function App() {
                         }}
                         className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-200 text-xs px-5 py-2.5 rounded-full border border-blue-500/30 flex items-center gap-2 transition-all backdrop-blur-md"
                       >
-                        <span>🔄</span> {deviceModel.view360_url ? '360° View' : 'Search 360°'}
+                        <span>🔄</span>
+                        <span className="text-blue-400 font-bold text-[10px] mr-0.5">Device</span>
+                        {deviceModel.view360_url ? '360° View' : 'Search 360°'}
                       </button>
                     )}
                   </div>
@@ -858,25 +883,32 @@ function App() {
                 )}
 
                 {/* 360 View Modal */}
-                {show360 && deviceModel?.view360_url && (
-                  <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center p-4 animate-fade-in" onClick={() => setShow360(false)}>
-                    <button className="absolute top-6 right-6 text-white text-4xl hover:text-gray-300 transition-opacity" onClick={() => setShow360(false)}>✕</button>
-                    <div className="w-full max-w-5xl h-[80vh] bg-white rounded-xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
-                      <iframe
-                        src={deviceModel.view360_url}
-                        className="w-full h-full border-0"
-                        title="360 View"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      ></iframe>
+                {(() => {
+                  const active360Model = show360Source === 'glass' ? glassModel : deviceModel;
+                  const active360Url = active360Model?.view360_url;
+                  const active360Label = show360Source === 'glass' ? 'Glass' : 'Device';
+                  const active360Color = show360Source === 'glass' ? 'text-purple-400' : 'text-blue-400';
+                  return show360 && active360Url ? (
+                    <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center p-4 animate-fade-in" onClick={() => setShow360(false)}>
+                      <button className="absolute top-6 right-6 text-white text-4xl hover:text-gray-300 transition-opacity" onClick={() => setShow360(false)}>✕</button>
+                      <p className={`text-sm font-bold mb-3 ${active360Color}`}>{active360Label}: {active360Model?.model}</p>
+                      <div className="w-full max-w-5xl h-[75vh] bg-white rounded-xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+                        <iframe
+                          src={active360Url}
+                          className="w-full h-full border-0"
+                          title={`360 View - ${active360Model?.model}`}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        ></iframe>
+                      </div>
+                      <div className="mt-4 flex gap-4">
+                        <a href={active360Url} target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300 text-sm underline">
+                          Open in New Tab
+                        </a>
+                      </div>
                     </div>
-                    <div className="mt-4 flex gap-4">
-                      <a href={deviceModel.view360_url} target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300 text-sm underline">
-                        Open in New Tab
-                      </a>
-                    </div>
-                  </div>
-                )}
+                  ) : null;
+                })()}
               </div>
             )
           }

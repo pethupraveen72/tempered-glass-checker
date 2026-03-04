@@ -8,15 +8,25 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Helper: Fetch phones index from GSMArena
 async function fetchGSMArenaIndex() {
-    const response = await fetch('https://www.gsmarena.com/quicksearch-8089.jpg');
+    // We use the new Cloudflare Worker to fetch the index as well to avoid IP bans on Vercel
+    const cfWorkerUrl = process.env.VITE_CLOUDFLARE_WORKER_URL;
+    if (!cfWorkerUrl) throw new Error("Missing Cloudflare Worker URL in Environment Variables.");
+
+    const indexUrl = `${cfWorkerUrl}?url=${encodeURIComponent('https://www.gsmarena.com/quicksearch-8089.jpg')}`;
+    const response = await fetch(indexUrl);
     if (!response.ok) throw new Error('GSMArena index block');
 
-    // Quicksearch returns a JS file containing `var gsmd = [...];`
     const text = await response.text();
-    const match = text.match(/var\s+gsmd\s*=\s*(\[.*?\]);/s);
-    if (!match) throw new Error('Failed to parse GSMArena index var');
 
-    return JSON.parse(match[1]);
+    try {
+        // Try direct JSON parse first (current format)
+        return JSON.parse(text);
+    } catch (e) {
+        // Fallback to regex if they switch back to the old JS variable format
+        const match = text.match(/var\s+gsmd\s*=\s*(\[.*?\]);/s);
+        if (match) return JSON.parse(match[1]);
+        throw new Error('Failed to parse GSMArena index format');
+    }
 }
 
 // Parsers

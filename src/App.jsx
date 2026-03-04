@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import GlassVisualizer from './components/GlassVisualizer';
 import { supabase } from './supabaseClient';
 
 function App() {

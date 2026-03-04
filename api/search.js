@@ -113,7 +113,11 @@ export default async function handler(req, res) {
         const indexData = await fetchGSMArenaIndex();
 
         let brandsMap = {};
-        indexData[0].forEach(b => { brandsMap[b[0]] = b[1]; });
+        if (Array.isArray(indexData[0])) {
+            indexData[0].forEach(b => { brandsMap[b[0]] = b[1]; });
+        } else if (typeof indexData[0] === 'object') {
+            brandsMap = indexData[0]; // The new format is a direct dictionary map
+        }
 
         const candidates = indexData[1].filter(item => {
             const brandId = item[0];

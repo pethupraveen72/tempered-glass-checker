@@ -496,7 +496,7 @@ function App() {
             <div className="flex items-center gap-3 mb-3">
               <span className="p-2 bg-blue-500/20 rounded-xl text-blue-300 text-xl">🌐</span>
               <div>
-                <h3 className="text-base sm:text-lg font-bold text-white leading-tight">Search Online Database</h3>
+                <h3 className="text-base sm:text-lg font-bold text-white leading-tight">Search Newly Launched Model</h3>
                 <p className="text-[11px] text-slate-400">Auto-fetch specs from GSMArena &amp; save to cloud</p>
               </div>
             </div>

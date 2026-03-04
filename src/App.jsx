@@ -1051,81 +1051,83 @@ function App() {
 
                 {/* Data Table */}
                 <div className="bg-slate-900/40 rounded-2xl border border-white/5 overflow-hidden">
-                  <table className="w-full text-sm text-left">
-                    <thead className="bg-white/5 text-xs text-slate-400 uppercase tracking-wider">
-                      <tr>
-                        <th className="px-6 py-4 font-semibold">Specification</th>
-                        <th className="px-6 py-4 font-semibold text-purple-300">Glass Model</th>
-                        <th className="px-6 py-4 font-semibold text-blue-300">Device Model</th>
-                        <th className="px-6 py-4 font-semibold text-right">Difference</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5 text-slate-300">
-                      <tr className="hover:bg-white/5 transition-colors">
-                        <td className="px-6 py-4 font-medium text-white">Body Height</td>
-                        <td className="px-6 py-4">{glassModel.height_mm}mm</td>
-                        <td className="px-6 py-4">{deviceModel.height_mm}mm</td>
-                        <td className={`px-6 py-4 text-right font-bold ${Math.abs(result.hDiff) > 1.0 ? 'text-red-400' : 'text-green-400'}`}>
-                          {result.height_difference}
-                        </td>
-                      </tr>
-                      <tr className="hover:bg-white/5 transition-colors">
-                        <td className="px-6 py-4 font-medium text-white">Body Width</td>
-                        <td className="px-6 py-4">{glassModel.width_mm}mm</td>
-                        <td className="px-6 py-4">{deviceModel.width_mm}mm</td>
-                        <td className={`px-6 py-4 text-right font-bold ${Math.abs(result.wDiff) > 1.0 ? 'text-red-400' : 'text-green-400'}`}>
-                          {result.width_difference}
-                        </td>
-                      </tr>
+                  <div className="overflow-x-auto w-full">
+                    <table className="w-full text-sm text-left whitespace-nowrap md:whitespace-normal">
+                      <thead className="bg-white/5 text-xs text-slate-400 uppercase tracking-wider">
+                        <tr>
+                          <th className="px-6 py-4 font-semibold">Specification</th>
+                          <th className="px-6 py-4 font-semibold text-purple-300">Glass Model</th>
+                          <th className="px-6 py-4 font-semibold text-blue-300">Device Model</th>
+                          <th className="px-6 py-4 font-semibold text-right">Difference</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5 text-slate-300">
+                        <tr className="hover:bg-white/5 transition-colors">
+                          <td className="px-6 py-4 font-medium text-white">Body Height</td>
+                          <td className="px-6 py-4">{glassModel.height_mm}mm</td>
+                          <td className="px-6 py-4">{deviceModel.height_mm}mm</td>
+                          <td className={`px-6 py-4 text-right font-bold ${Math.abs(result.hDiff) > 1.0 ? 'text-red-400' : 'text-green-400'}`}>
+                            {result.height_difference}
+                          </td>
+                        </tr>
+                        <tr className="hover:bg-white/5 transition-colors">
+                          <td className="px-6 py-4 font-medium text-white">Body Width</td>
+                          <td className="px-6 py-4">{glassModel.width_mm}mm</td>
+                          <td className="px-6 py-4">{deviceModel.width_mm}mm</td>
+                          <td className={`px-6 py-4 text-right font-bold ${Math.abs(result.wDiff) > 1.0 ? 'text-red-400' : 'text-green-400'}`}>
+                            {result.width_difference}
+                          </td>
+                        </tr>
 
-                      {/* Display Dimensions */}
-                      <tr className="bg-black/20 hover:bg-black/30 transition-colors">
-                        <td className="px-6 py-4 font-medium text-purple-200 pl-8 border-l-4 border-purple-500/30">Display Height</td>
-                        <td className="px-6 py-4 text-slate-400">{glassModel.display_height_mm || '-'}mm</td>
-                        <td className="px-6 py-4 text-slate-400">{deviceModel.display_height_mm || '-'}mm</td>
-                        <td className="px-6 py-4 text-right font-mono text-slate-400">
-                          {glassModel.display_height_mm && deviceModel.display_height_mm
-                            ? (glassModel.display_height_mm - deviceModel.display_height_mm).toFixed(2) + 'mm'
-                            : '-'}
-                        </td>
-                      </tr>
-                      <tr className="bg-black/20 hover:bg-black/30 transition-colors">
-                        <td className="px-6 py-4 font-medium text-purple-200 pl-8 border-l-4 border-purple-500/30">Display Width</td>
-                        <td className="px-6 py-4 text-slate-400">{glassModel.display_width_mm || '-'}mm</td>
-                        <td className="px-6 py-4 text-slate-400">{deviceModel.display_width_mm || '-'}mm</td>
-                        <td className="px-6 py-4 text-right font-mono text-slate-400">
-                          {glassModel.display_width_mm && deviceModel.display_width_mm
-                            ? (glassModel.display_width_mm - deviceModel.display_width_mm).toFixed(2) + 'mm'
-                            : '-'}
-                        </td>
-                      </tr>
+                        {/* Display Dimensions */}
+                        <tr className="bg-black/20 hover:bg-black/30 transition-colors">
+                          <td className="px-6 py-4 font-medium text-purple-200 pl-8 border-l-4 border-purple-500/30">Display Height</td>
+                          <td className="px-6 py-4 text-slate-400">{glassModel.display_height_mm || '-'}mm</td>
+                          <td className="px-6 py-4 text-slate-400">{deviceModel.display_height_mm || '-'}mm</td>
+                          <td className="px-6 py-4 text-right font-mono text-slate-400">
+                            {glassModel.display_height_mm && deviceModel.display_height_mm
+                              ? (glassModel.display_height_mm - deviceModel.display_height_mm).toFixed(2) + 'mm'
+                              : '-'}
+                          </td>
+                        </tr>
+                        <tr className="bg-black/20 hover:bg-black/30 transition-colors">
+                          <td className="px-6 py-4 font-medium text-purple-200 pl-8 border-l-4 border-purple-500/30">Display Width</td>
+                          <td className="px-6 py-4 text-slate-400">{glassModel.display_width_mm || '-'}mm</td>
+                          <td className="px-6 py-4 text-slate-400">{deviceModel.display_width_mm || '-'}mm</td>
+                          <td className="px-6 py-4 text-right font-mono text-slate-400">
+                            {glassModel.display_width_mm && deviceModel.display_width_mm
+                              ? (glassModel.display_width_mm - deviceModel.display_width_mm).toFixed(2) + 'mm'
+                              : '-'}
+                          </td>
+                        </tr>
 
-                      <tr className="hover:bg-white/5 transition-colors">
-                        <td className="px-6 py-4 font-medium text-white">Screen Size</td>
-                        <td className="px-6 py-4">{glassModel.screen_size}"</td>
-                        <td className="px-6 py-4">{deviceModel.screen_size}"</td>
-                        <td className="px-6 py-4 text-right font-bold text-slate-400">
-                          {Math.abs(deviceModel.screen_size - glassModel.screen_size).toFixed(2)}"
-                        </td>
-                      </tr>
-                      <tr className="hover:bg-white/5 transition-colors">
-                        <td className="px-6 py-4 font-medium text-white">Screen Type</td>
-                        <td className="px-6 py-4">{glassModel.screen_type}</td>
-                        <td className="px-6 py-4">{deviceModel.screen_type}</td>
-                        <td className={`px-6 py-4 text-right font-bold ${glassModel.screen_type === deviceModel.screen_type ? 'text-green-400' : 'text-red-400'}`}>
-                          {glassModel.screen_type === deviceModel.screen_type ? 'MATCH' : 'MISMATCH'}
-                        </td>
-                      </tr>
-                      <tr className="hover:bg-white/5 transition-colors">
-                        <td className="px-6 py-4 font-medium text-white">Notch Type</td>
-                        <td className="px-6 py-4">{glassModel.notch_type}</td>
-                        <td className="px-6 py-4">{deviceModel.notch_type}</td>
-                        <td className={`px-6 py-4 text-right font-bold ${glassModel.notch_type === deviceModel.notch_type ? 'text-green-400' : 'text-red-400'}`}>
-                          {glassModel.notch_type === deviceModel.notch_type ? 'MATCH' : 'MISMATCH'}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                        <tr className="hover:bg-white/5 transition-colors">
+                          <td className="px-6 py-4 font-medium text-white">Screen Size</td>
+                          <td className="px-6 py-4">{glassModel.screen_size}"</td>
+                          <td className="px-6 py-4">{deviceModel.screen_size}"</td>
+                          <td className="px-6 py-4 text-right font-bold text-slate-400">
+                            {Math.abs(deviceModel.screen_size - glassModel.screen_size).toFixed(2)}"
+                          </td>
+                        </tr>
+                        <tr className="hover:bg-white/5 transition-colors">
+                          <td className="px-6 py-4 font-medium text-white">Screen Type</td>
+                          <td className="px-6 py-4">{glassModel.screen_type}</td>
+                          <td className="px-6 py-4">{deviceModel.screen_type}</td>
+                          <td className={`px-6 py-4 text-right font-bold ${glassModel.screen_type === deviceModel.screen_type ? 'text-green-400' : 'text-red-400'}`}>
+                            {glassModel.screen_type === deviceModel.screen_type ? 'MATCH' : 'MISMATCH'}
+                          </td>
+                        </tr>
+                        <tr className="hover:bg-white/5 transition-colors">
+                          <td className="px-6 py-4 font-medium text-white">Notch Type</td>
+                          <td className="px-6 py-4">{glassModel.notch_type}</td>
+                          <td className="px-6 py-4">{deviceModel.notch_type}</td>
+                          <td className={`px-6 py-4 text-right font-bold ${glassModel.notch_type === deviceModel.notch_type ? 'text-green-400' : 'text-red-400'}`}>
+                            {glassModel.notch_type === deviceModel.notch_type ? 'MATCH' : 'MISMATCH'}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                   {/* Copy Result Button */}
                   <div className="mt-6 flex justify-center gap-3">
                     <button

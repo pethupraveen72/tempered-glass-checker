@@ -1041,98 +1041,83 @@ function App() {
                       </tbody>
                     </table>
                   </div>
-                  {/* Copy Result Button */}
-                  <div className="mt-6 flex justify-center gap-3">
-                    <button
-                      onClick={copyResult}
-                      className="flex items-center gap-2 px-6 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-semibold text-white border border-white/10 transition-all"
-                    >
-                      📋 Copy Result
-                    </button>
-                    <button
-                      onClick={() => { setResult(null); setGlassModel(null); setDeviceModel(null); setGlassQuery(''); setDeviceQuery(''); }}
-                      className="flex items-center gap-2 px-6 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-sm font-semibold text-slate-400 hover:text-white border border-white/10 transition-all"
-                    >
-                      🔄 New Check
-                    </button>
-                  </div>
-                </div>
 
 
 
-                {/* In-Display FPS Warning */}
-                {getFingerprintWarning(deviceModel) && (
-                  <div className="mt-3 p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl flex gap-3 items-start">
-                    <span className="text-xl shrink-0">👆</span>
-                    <p className="text-xs text-orange-200 leading-relaxed">{getFingerprintWarning(deviceModel)}</p>
-                  </div>
-                )}
-
-                {/* BBK Family Note */}
-                {result.color_code !== 'RED' && getBrandFamily(glassModel.brand) === 'BBK' && getBrandFamily(deviceModel.brand) === 'BBK' && glassModel.brand !== deviceModel.brand && (
-                  <div className="mt-3 p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl flex gap-3 items-start">
-                    <span className="text-xl shrink-0">⭐</span>
-                    <p className="text-xs text-purple-200 leading-relaxed">
-                      <span className="font-bold">BBK Family Cross-Match</span> — {glassModel.brand} and {deviceModel.brand} are both BBK family brands (OPPO/Vivo/Realme/OnePlus/iQOO) and often share identical display dimensions. This is a commonly successful cross-brand fit.
-                    </p>
-                  </div>
-                )}
-
-                {/* Case-Friendly Note */}
-                {result.color_code !== 'RED' && (
-                  <div className="mt-3 p-3 bg-white/5 border border-white/5 rounded-xl flex gap-3 items-start">
-                    <span className="text-base shrink-0">{glassType === 'Type B' ? '⚠️' : '✅'}</span>
-                    <p className="text-xs text-slate-400 leading-relaxed">
-                      {glassType === 'Type B'
-                        ? 'Full-cover (Type B) glass has black borders — may conflict with thick cases. Test case fit after installing.'
-                        : 'Clear (Type A) glass is usually case-friendly — no black borders to conflict with case edges.'}
-                    </p>
-                  </div>
-                )}
-
-                {/* Failure Mode Warnings */}
-                {(() => {
-                  const warns = getFailureWarnings(glassModel, deviceModel, result, glassType);
-                  return warns.length > 0 ? (
-                    <div className="mt-4 space-y-2">
-                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">⚠️ Risk Factors</p>
-                      {warns.map((w, i) => (
-                        <div key={i} className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
-                          <p className="text-xs text-red-300 leading-relaxed">{w}</p>
-                        </div>
-                      ))}
+                  {/* In-Display FPS Warning */}
+                  {getFingerprintWarning(deviceModel) && (
+                    <div className="mt-3 p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl flex gap-3 items-start">
+                      <span className="text-xl shrink-0">👆</span>
+                      <p className="text-xs text-orange-200 leading-relaxed">{getFingerprintWarning(deviceModel)}</p>
                     </div>
-                  ) : null;
-                })()}
+                  )}
 
-                {/* Installation Tips */}
-                {result.color_code !== 'RED' && (() => {
-                  const tips = getInstallTips(deviceModel.notch_type, deviceModel.screen_type, glassType);
-                  return (
-                    <details className="mt-4 group">
-                      <summary className="cursor-pointer text-xs font-semibold text-slate-400 uppercase tracking-wider hover:text-white transition-colors select-none">
-                        📋 Installation Tips ({tips.length} steps) ▸
-                      </summary>
-                      <div className="mt-3 space-y-2 pl-2">
-                        {tips.map((tip, i) => (
-                          <div key={i} className="flex gap-2.5 items-start">
-                            <span className="text-xs font-bold text-slate-500 shrink-0 mt-0.5">{i + 1}.</span>
-                            <p className="text-xs text-slate-300 leading-relaxed">{tip}</p>
+                  {/* BBK Family Note */}
+                  {result.color_code !== 'RED' && getBrandFamily(glassModel.brand) === 'BBK' && getBrandFamily(deviceModel.brand) === 'BBK' && glassModel.brand !== deviceModel.brand && (
+                    <div className="mt-3 p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl flex gap-3 items-start">
+                      <span className="text-xl shrink-0">⭐</span>
+                      <p className="text-xs text-purple-200 leading-relaxed">
+                        <span className="font-bold">BBK Family Cross-Match</span> — {glassModel.brand} and {deviceModel.brand} are both BBK family brands (OPPO/Vivo/Realme/OnePlus/iQOO) and often share identical display dimensions. This is a commonly successful cross-brand fit.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Case-Friendly Note */}
+                  {result.color_code !== 'RED' && (
+                    <div className="mt-3 p-3 bg-white/5 border border-white/5 rounded-xl flex gap-3 items-start">
+                      <span className="text-base shrink-0">{glassType === 'Type B' ? '⚠️' : '✅'}</span>
+                      <p className="text-xs text-slate-400 leading-relaxed">
+                        {glassType === 'Type B'
+                          ? 'Full-cover (Type B) glass has black borders — may conflict with thick cases. Test case fit after installing.'
+                          : 'Clear (Type A) glass is usually case-friendly — no black borders to conflict with case edges.'}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Failure Mode Warnings */}
+                  {(() => {
+                    const warns = getFailureWarnings(glassModel, deviceModel, result, glassType);
+                    return warns.length > 0 ? (
+                      <div className="mt-4 space-y-2">
+                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">⚠️ Risk Factors</p>
+                        {warns.map((w, i) => (
+                          <div key={i} className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                            <p className="text-xs text-red-300 leading-relaxed">{w}</p>
                           </div>
                         ))}
                       </div>
-                    </details>
-                  );
-                })()}
+                    ) : null;
+                  })()}
 
-                {/* Copy Result + New Check */}
-                <div className="mt-6 flex justify-center gap-3">
-                  <button onClick={copyResult} className="flex items-center gap-2 px-6 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-semibold text-white border border-white/10 transition-all">
-                    📋 Copy Result
-                  </button>
-                  <button onClick={() => { setResult(null); setGlassModel(null); setDeviceModel(null); setGlassQuery(''); setDeviceQuery(''); }} className="flex items-center gap-2 px-6 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-sm font-semibold text-slate-400 hover:text-white border border-white/10 transition-all">
-                    🔄 New Check
-                  </button>
+                  {/* Installation Tips */}
+                  {result.color_code !== 'RED' && (() => {
+                    const tips = getInstallTips(deviceModel.notch_type, deviceModel.screen_type, glassType);
+                    return (
+                      <details className="mt-4 group">
+                        <summary className="cursor-pointer text-xs font-semibold text-slate-400 uppercase tracking-wider hover:text-white transition-colors select-none">
+                          📋 Installation Tips ({tips.length} steps) ▸
+                        </summary>
+                        <div className="mt-3 space-y-2 pl-2">
+                          {tips.map((tip, i) => (
+                            <div key={i} className="flex gap-2.5 items-start">
+                              <span className="text-xs font-bold text-slate-500 shrink-0 mt-0.5">{i + 1}.</span>
+                              <p className="text-xs text-slate-300 leading-relaxed">{tip}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    );
+                  })()}
+
+                  {/* Copy Result + New Check */}
+                  <div className="mt-6 flex justify-center gap-3">
+                    <button onClick={copyResult} className="flex items-center gap-2 px-6 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-semibold text-white border border-white/10 transition-all">
+                      📋 Copy Result
+                    </button>
+                    <button onClick={() => { setResult(null); setGlassModel(null); setDeviceModel(null); setGlassQuery(''); setDeviceQuery(''); }} className="flex items-center gap-2 px-6 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-sm font-semibold text-slate-400 hover:text-white border border-white/10 transition-all">
+                      🔄 New Check
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

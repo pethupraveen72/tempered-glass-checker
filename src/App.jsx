@@ -927,11 +927,11 @@ function App() {
         {/* RESULT CARD */}
         {
           result && (
-            <div className={`mt-12 w-full rounded-3xl overflow-hidden shadow-2xl animate-fade-in relative group ${result.isCompatible ? 'shadow-green-500/20' : 'shadow-red-500/20'}`}>
-              <div className={`absolute inset-0 opacity-20 ${result.isCompatible ? 'bg-gradient-to-br from-green-600 to-teal-900' : 'bg-gradient-to-br from-red-600 to-pink-900'}`}></div>
+            <div className={`mt-12 w-full rounded-3xl overflow-hidden shadow-2xl animate-fade-in relative group ${result.isCompatible ? 'shadow-green-500/30' : 'shadow-red-500/30'}`}>
+              <div className={`absolute inset-0 opacity-40 ${result.isCompatible ? 'bg-gradient-to-br from-green-700 via-teal-900 to-slate-900' : 'bg-gradient-to-br from-red-700 via-rose-900 to-slate-900'}`}></div>
               <div className="absolute inset-0 backdrop-blur-3xl"></div>
 
-              <div className="relative p-8 border border-white/10 rounded-3xl">
+              <div className={`relative p-8 border rounded-3xl ${result.isCompatible ? 'border-green-500/30' : 'border-red-500/30'}`}>
 
                 {/* Header Status */}
                 <div className="text-center mb-8">

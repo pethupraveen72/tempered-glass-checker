@@ -773,12 +773,15 @@ function App() {
                 <h3 className="text-center text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Visual Comparison</h3>
                 <div className="flex justify-center items-end gap-2 sm:gap-8 mb-6">
 
-                  {/* GLASS PREVIEW */}
+                  {/* GLASS PREVIEW — click to zoom */}
                   <div className="text-center w-32 sm:w-40 relative group">
                     {glassModel?.image_url ? (
-                      <div className="relative">
+                      <div className="relative cursor-zoom-in" onClick={() => setShowZoom(true)} title="Click to Zoom">
                         <img src={glassModel.image_url} alt={glassModel.model} className="w-full h-48 object-contain drop-shadow-2xl transition-transform transform group-hover:scale-105" onError={(e) => e.target.style.display = 'none'} />
                         <div className="absolute -bottom-2 -right-2 bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-lg">GLASS</div>
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <span className="bg-black/50 text-white text-xs px-2 py-1 rounded-lg backdrop-blur-sm">🔍 Zoom</span>
+                        </div>
                       </div>
                     ) : (
                       <div className="w-full h-48 rounded-xl border-2 border-dashed border-slate-700 flex items-center justify-center text-slate-600 text-xs">Waiting for Glass...</div>
@@ -789,12 +792,15 @@ function App() {
                   {/* VS BADGE */}
                   <div className="mb-12 text-slate-600 font-black text-xl italic opacity-50">VS</div>
 
-                  {/* DEVICE PREVIEW */}
+                  {/* DEVICE PREVIEW — click to zoom */}
                   <div className="text-center w-32 sm:w-40 relative group">
                     {deviceModel?.image_url ? (
-                      <div className="relative">
+                      <div className="relative cursor-zoom-in" onClick={() => setShowZoom(true)} title="Click to Zoom">
                         <img src={deviceModel.image_url} alt={deviceModel.model} className="w-full h-48 object-contain drop-shadow-2xl transition-transform transform group-hover:scale-105" onError={(e) => e.target.style.display = 'none'} />
                         <div className="absolute -bottom-2 -right-2 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-lg">DEVICE</div>
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <span className="bg-black/50 text-white text-xs px-2 py-1 rounded-lg backdrop-blur-sm">🔍 Zoom</span>
+                        </div>
                       </div>
                     ) : (
                       <div className="w-full h-48 rounded-xl border-2 border-dashed border-slate-700 flex items-center justify-center text-slate-600 text-xs">Waiting for Device...</div>
@@ -803,547 +809,539 @@ function App() {
                   </div>
                 </div>
 
-                {/* Zoom Button */}
-                {(glassModel?.image_url || deviceModel?.image_url) && (
-                  <div className="flex justify-center">
-                    <button
-                      onClick={() => setShowZoom(true)}
-                      className="bg-white/5 hover:bg-white/10 text-white text-xs px-5 py-2.5 rounded-full border border-white/10 flex items-center gap-2 transition-all backdrop-blur-md"
-                    >
-                      <span>🔍</span> Open Zoom View
-                    </button>
-
-                    {/* Glass Model 360 button */}
-                    {glassModel && (
-                      <button
-                        onClick={() => {
-                          if (glassModel.view360_url) {
-                            setShow360Source('glass');
-                            setShow360(true);
-                          } else {
-                            const query = `${glassModel.brand} ${glassModel.model} 360 degree view 91mobiles`;
-                            window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
-                          }
-                        }}
-                        className="bg-purple-600/20 hover:bg-purple-600/30 text-purple-200 text-xs px-5 py-2.5 rounded-full border border-purple-500/30 flex items-center gap-2 transition-all backdrop-blur-md"
-                      >
-                        <span>🔄</span>
-                        <span className="text-purple-400 font-bold text-[10px] mr-0.5">Glass</span>
-                        {glassModel.view360_url ? '360° View' : 'Search 360°'}
-                      </button>
-                    )}
-
-                    {/* Device Model 360 button */}
-                    {deviceModel && (
-                      <button
-                        onClick={() => {
-                          if (deviceModel.view360_url) {
-                            setShow360Source('device');
-                            setShow360(true);
-                          } else {
-                            const query = `${deviceModel.brand} ${deviceModel.model} 360 degree view 91mobiles`;
-                            window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
-                          }
-                        }}
-                        className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-200 text-xs px-5 py-2.5 rounded-full border border-blue-500/30 flex items-center gap-2 transition-all backdrop-blur-md"
-                      >
-                        <span>🔄</span>
-                        <span className="text-blue-400 font-bold text-[10px] mr-0.5">Device</span>
-                        {deviceModel.view360_url ? '360° View' : 'Search 360°'}
-                      </button>
-                    )}
-                  </div>
+                {/* Glass Model 360 button */}
+                {glassModel && (
+                  <button
+                    onClick={() => {
+                      if (glassModel.view360_url) {
+                        setShow360Source('glass');
+                        setShow360(true);
+                      } else {
+                        const query = `${glassModel.brand} ${glassModel.model} 360 degree view 91mobiles`;
+                        window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+                      }
+                    }}
+                    className="bg-purple-600/20 hover:bg-purple-600/30 text-purple-200 text-xs px-5 py-2.5 rounded-full border border-purple-500/30 flex items-center gap-2 transition-all backdrop-blur-md"
+                  >
+                    <span>🔄</span>
+                    <span className="text-purple-400 font-bold text-[10px] mr-0.5">Glass</span>
+                    {glassModel.view360_url ? '360° View' : 'Search 360°'}
+                  </button>
                 )}
 
-                {/* ZOOM MODAL */}
-                {showZoom && (
-                  <div className="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-xl flex flex-col items-center justify-center p-4 animate-fade-in" onClick={() => setShowZoom(false)}>
-                    <button className="absolute top-6 right-6 text-white text-4xl hover:text-gray-300 opacity-80 hover:opacity-100 transition-opacity" onClick={() => setShowZoom(false)}>✕</button>
-                    <div className="flex gap-0 w-full max-w-7xl justify-center items-center h-[85vh]" onClick={e => e.stopPropagation()}>
-
-                      {/* Glass Big */}
-                      <div className="flex flex-col items-center h-full max-w-[50%]">
-                        <h3 className="text-purple-400 font-bold mb-4 text-xl tracking-wider">Glass ({glassModel?.model})</h3>
-                        {glassModel?.image_url ? (
-                          <img src={glassModel.image_url} className="max-w-full max-h-[calc(100%-3rem)] object-contain drop-shadow-2xl" />
-                        ) : <div className="text-slate-500">No Image</div>}
-                      </div>
-
-                      {/* Device Big */}
-                      <div className="flex flex-col items-center h-full max-w-[50%] border-l border-white/10 pl-4">
-                        <h3 className="text-blue-400 font-bold mb-4 text-xl tracking-wider">Device ({deviceModel?.model})</h3>
-                        {deviceModel?.image_url ? (
-                          <img src={deviceModel.image_url} className="max-w-full max-h-[calc(100%-3rem)] object-contain drop-shadow-2xl" />
-                        ) : <div className="text-slate-500">No Image</div>}
-                      </div>
-
-                    </div>
-                    <p className="text-slate-500 text-sm mt-6 font-medium">Click anywhere to close</p>
-                  </div>
+                {/* Device Model 360 button */}
+                {deviceModel && (
+                  <button
+                    onClick={() => {
+                      if (deviceModel.view360_url) {
+                        setShow360Source('device');
+                        setShow360(true);
+                      } else {
+                        const query = `${deviceModel.brand} ${deviceModel.model} 360 degree view 91mobiles`;
+                        window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+                      }
+                    }}
+                    className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-200 text-xs px-5 py-2.5 rounded-full border border-blue-500/30 flex items-center gap-2 transition-all backdrop-blur-md"
+                  >
+                    <span>🔄</span>
+                    <span className="text-blue-400 font-bold text-[10px] mr-0.5">Device</span>
+                    {deviceModel.view360_url ? '360° View' : 'Search 360°'}
+                  </button>
                 )}
-
-                {/* 360 View Modal */}
-                {(() => {
-                  const active360Model = show360Source === 'glass' ? glassModel : deviceModel;
-                  const active360Url = active360Model?.view360_url;
-                  const active360Label = show360Source === 'glass' ? 'Glass' : 'Device';
-                  const active360Color = show360Source === 'glass' ? 'text-purple-400' : 'text-blue-400';
-                  return show360 && active360Url ? (
-                    <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center p-4 animate-fade-in" onClick={() => setShow360(false)}>
-                      <button className="absolute top-6 right-6 text-white text-4xl hover:text-gray-300 transition-opacity" onClick={() => setShow360(false)}>✕</button>
-                      <p className={`text-sm font-bold mb-3 ${active360Color}`}>{active360Label}: {active360Model?.model}</p>
-                      <div className="w-full max-w-5xl h-[75vh] bg-white rounded-xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
-                        <iframe
-                          src={active360Url}
-                          className="w-full h-full border-0"
-                          title={`360 View - ${active360Model?.model}`}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                        ></iframe>
-                      </div>
-                      <div className="mt-4 flex gap-4">
-                        <a href={active360Url} target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300 text-sm underline">
-                          Open in New Tab
-                        </a>
-                      </div>
-                    </div>
-                  ) : null;
-                })()}
               </div>
-            )
-          }
-        </div >
+            )}
 
-        {/* Check Button */}
-        < button
-          onClick={checkCompatibility}
-          disabled={!glassModel || !deviceModel
-          }
-          className="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 bg-size-200 hover:bg-pos-100 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed text-white font-black py-5 rounded-2xl shadow-xl shadow-purple-900/40 transform active:scale-[0.98] transition-all duration-300 text-xl tracking-wide uppercase mt-8 border border-white/10"
-        >
-          Check Compatibility
-        </button >
+          {/* ZOOM MODAL */}
+          {showZoom && (
+            <div className="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-xl flex flex-col items-center justify-center p-4 animate-fade-in" onClick={() => setShowZoom(false)}>
+              <button className="absolute top-6 right-6 text-white text-4xl hover:text-gray-300 opacity-80 hover:opacity-100 transition-opacity" onClick={() => setShowZoom(false)}>✕</button>
+              <div className="flex gap-0 w-full max-w-7xl justify-center items-center h-[85vh]" onClick={e => e.stopPropagation()}>
 
-        {/* RESULT CARD */}
-        {
-          result && (
-            <div className={`mt-12 w-full rounded-3xl overflow-hidden shadow-2xl animate-fade-in relative group ${result.isCompatible ? 'shadow-green-500/30' : 'shadow-red-500/30'}`}>
-              <div className={`absolute inset-0 opacity-40 ${result.isCompatible ? 'bg-gradient-to-br from-green-700 via-teal-900 to-slate-900' : 'bg-gradient-to-br from-red-700 via-rose-900 to-slate-900'}`}></div>
-              <div className="absolute inset-0 backdrop-blur-3xl"></div>
-
-              <div className={`relative p-8 border rounded-3xl ${result.isCompatible ? 'border-green-500/30' : 'border-red-500/30'}`}>
-
-                {/* Header Status */}
-                <div className="text-center mb-8">
-                  <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-4 border ${result.isCompatible ? 'bg-green-500/20 text-green-300 border-green-500/30' : 'bg-red-500/20 text-red-300 border-red-500/30'}`}>
-                    <span>{glassType} Evaluation</span>
-                  </div>
-                  <h2 className={`text-4xl md:text-5xl font-black uppercase tracking-tight mb-4 drop-shadow-lg ${result.isCompatible ? 'text-transparent bg-clip-text bg-gradient-to-r from-green-300 to-teal-200' : 'text-transparent bg-clip-text bg-gradient-to-r from-red-300 to-pink-200'}`}>
-                    {result.compatibility_status}
-                  </h2>
-                  <p className="text-lg text-slate-200 font-light italic max-w-2xl mx-auto leading-relaxed opacity-90">
-                    "{result.reason_message}"
-                  </p>
+                {/* Glass Big */}
+                <div className="flex flex-col items-center h-full max-w-[50%]">
+                  <h3 className="text-purple-400 font-bold mb-4 text-xl tracking-wider">Glass ({glassModel?.model})</h3>
+                  {glassModel?.image_url ? (
+                    <img src={glassModel.image_url} className="max-w-full max-h-[calc(100%-3rem)] object-contain drop-shadow-2xl" />
+                  ) : <div className="text-slate-500">No Image</div>}
                 </div>
 
-                {/* Confidence Score Bar */}
+                {/* Device Big */}
+                <div className="flex flex-col items-center h-full max-w-[50%] border-l border-white/10 pl-4">
+                  <h3 className="text-blue-400 font-bold mb-4 text-xl tracking-wider">Device ({deviceModel?.model})</h3>
+                  {deviceModel?.image_url ? (
+                    <img src={deviceModel.image_url} className="max-w-full max-h-[calc(100%-3rem)] object-contain drop-shadow-2xl" />
+                  ) : <div className="text-slate-500">No Image</div>}
+                </div>
+
+              </div>
+              <p className="text-slate-500 text-sm mt-6 font-medium">Click anywhere to close</p>
+            </div>
+          )}
+
+          {/* 360 View Modal */}
+          {(() => {
+            const active360Model = show360Source === 'glass' ? glassModel : deviceModel;
+            const active360Url = active360Model?.view360_url;
+            const active360Label = show360Source === 'glass' ? 'Glass' : 'Device';
+            const active360Color = show360Source === 'glass' ? 'text-purple-400' : 'text-blue-400';
+            return show360 && active360Url ? (
+              <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center p-4 animate-fade-in" onClick={() => setShow360(false)}>
+                <button className="absolute top-6 right-6 text-white text-4xl hover:text-gray-300 transition-opacity" onClick={() => setShow360(false)}>✕</button>
+                <p className={`text-sm font-bold mb-3 ${active360Color}`}>{active360Label}: {active360Model?.model}</p>
+                <div className="w-full max-w-5xl h-[75vh] bg-white rounded-xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+                  <iframe
+                    src={active360Url}
+                    className="w-full h-full border-0"
+                    title={`360 View - ${active360Model?.model}`}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  ></iframe>
+                </div>
+                <div className="mt-4 flex gap-4">
+                  <a href={active360Url} target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300 text-sm underline">
+                    Open in New Tab
+                  </a>
+                </div>
+              </div>
+            ) : null;
+          })()}
+        </div>
+        )
+          }
+      </div >
+
+      {/* Check Button */}
+      < button
+        onClick={checkCompatibility}
+        disabled={!glassModel || !deviceModel
+        }
+        className="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 bg-size-200 hover:bg-pos-100 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed text-white font-black py-5 rounded-2xl shadow-xl shadow-purple-900/40 transform active:scale-[0.98] transition-all duration-300 text-xl tracking-wide uppercase mt-8 border border-white/10"
+      >
+        Check Compatibility
+      </button >
+
+      {/* RESULT CARD */}
+      {
+        result && (
+          <div className={`mt-12 w-full rounded-3xl overflow-hidden shadow-2xl animate-fade-in relative group ${result.isCompatible ? 'shadow-green-500/30' : 'shadow-red-500/30'}`}>
+            <div className={`absolute inset-0 opacity-40 ${result.isCompatible ? 'bg-gradient-to-br from-green-700 via-teal-900 to-slate-900' : 'bg-gradient-to-br from-red-700 via-rose-900 to-slate-900'}`}></div>
+            <div className="absolute inset-0 backdrop-blur-3xl"></div>
+
+            <div className={`relative p-8 border rounded-3xl ${result.isCompatible ? 'border-green-500/30' : 'border-red-500/30'}`}>
+
+              {/* Header Status */}
+              <div className="text-center mb-8">
+                <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-4 border ${result.isCompatible ? 'bg-green-500/20 text-green-300 border-green-500/30' : 'bg-red-500/20 text-red-300 border-red-500/30'}`}>
+                  <span>{glassType} Evaluation</span>
+                </div>
+                <h2 className={`text-4xl md:text-5xl font-black uppercase tracking-tight mb-4 drop-shadow-lg ${result.isCompatible ? 'text-transparent bg-clip-text bg-gradient-to-r from-green-300 to-teal-200' : 'text-transparent bg-clip-text bg-gradient-to-r from-red-300 to-pink-200'}`}>
+                  {result.compatibility_status}
+                </h2>
+                <p className="text-lg text-slate-200 font-light italic max-w-2xl mx-auto leading-relaxed opacity-90">
+                  "{result.reason_message}"
+                </p>
+              </div>
+
+              {/* Confidence Score Bar */}
+              {(() => {
+                const conf = getConfidenceScore(glassModel, deviceModel, result);
+                return conf ? (
+                  <div className="mb-6 bg-black/20 rounded-2xl p-4 border border-white/5">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Fit Confidence</p>
+                      <span className={`text-xs font-bold ${conf.color}`}>{conf.score}% — {conf.label}</span>
+                    </div>
+                    <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                      <div className={`h-2 rounded-full transition-all duration-700 ${conf.bar}`} style={{ width: `${conf.score}%` }}></div>
+                    </div>
+                  </div>
+                ) : null;
+              })()}
+
+              {/* Data Table */}
+              <div className="bg-slate-900/40 rounded-2xl border border-white/5 overflow-hidden">
+                <div className="overflow-x-auto w-full">
+                  <table className="w-full text-sm text-left whitespace-nowrap md:whitespace-normal">
+                    <thead className="bg-white/5 text-xs text-slate-400 uppercase tracking-wider">
+                      <tr>
+                        <th className="px-6 py-4 font-semibold">Specification</th>
+                        <th className="px-6 py-4 font-semibold text-purple-300">Glass Model</th>
+                        <th className="px-6 py-4 font-semibold text-blue-300">Device Model</th>
+                        <th className="px-6 py-4 font-semibold text-right">Difference</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 text-slate-300">
+                      <tr className="hover:bg-white/5 transition-colors">
+                        <td className="px-6 py-4 font-medium text-white">Body Height</td>
+                        <td className="px-6 py-4">{glassModel.height_mm}mm</td>
+                        <td className="px-6 py-4">{deviceModel.height_mm}mm</td>
+                        <td className={`px-6 py-4 text-right font-bold ${Math.abs(result.hDiff) > 1.0 ? 'text-red-400' : 'text-green-400'}`}>
+                          {result.height_difference}
+                        </td>
+                      </tr>
+                      <tr className="hover:bg-white/5 transition-colors">
+                        <td className="px-6 py-4 font-medium text-white">Body Width</td>
+                        <td className="px-6 py-4">{glassModel.width_mm}mm</td>
+                        <td className="px-6 py-4">{deviceModel.width_mm}mm</td>
+                        <td className={`px-6 py-4 text-right font-bold ${Math.abs(result.wDiff) > 1.0 ? 'text-red-400' : 'text-green-400'}`}>
+                          {result.width_difference}
+                        </td>
+                      </tr>
+
+                      {/* Display Dimensions */}
+                      <tr className="bg-black/20 hover:bg-black/30 transition-colors">
+                        <td className="px-6 py-4 font-medium text-purple-200 pl-8 border-l-4 border-purple-500/30">Display Height</td>
+                        <td className="px-6 py-4 text-slate-400">{glassModel.display_height_mm || '-'}mm</td>
+                        <td className="px-6 py-4 text-slate-400">{deviceModel.display_height_mm || '-'}mm</td>
+                        <td className="px-6 py-4 text-right font-mono text-slate-400">
+                          {glassModel.display_height_mm && deviceModel.display_height_mm
+                            ? (glassModel.display_height_mm - deviceModel.display_height_mm).toFixed(2) + 'mm'
+                            : '-'}
+                        </td>
+                      </tr>
+                      <tr className="bg-black/20 hover:bg-black/30 transition-colors">
+                        <td className="px-6 py-4 font-medium text-purple-200 pl-8 border-l-4 border-purple-500/30">Display Width</td>
+                        <td className="px-6 py-4 text-slate-400">{glassModel.display_width_mm || '-'}mm</td>
+                        <td className="px-6 py-4 text-slate-400">{deviceModel.display_width_mm || '-'}mm</td>
+                        <td className="px-6 py-4 text-right font-mono text-slate-400">
+                          {glassModel.display_width_mm && deviceModel.display_width_mm
+                            ? (glassModel.display_width_mm - deviceModel.display_width_mm).toFixed(2) + 'mm'
+                            : '-'}
+                        </td>
+                      </tr>
+
+                      <tr className="hover:bg-white/5 transition-colors">
+                        <td className="px-6 py-4 font-medium text-white">Screen Size</td>
+                        <td className="px-6 py-4">{glassModel.screen_size}"</td>
+                        <td className="px-6 py-4">{deviceModel.screen_size}"</td>
+                        <td className="px-6 py-4 text-right font-bold text-slate-400">
+                          {Math.abs(deviceModel.screen_size - glassModel.screen_size).toFixed(2)}"
+                        </td>
+                      </tr>
+                      <tr className="hover:bg-white/5 transition-colors">
+                        <td className="px-6 py-4 font-medium text-white">Screen Type</td>
+                        <td className="px-6 py-4">{glassModel.screen_type}</td>
+                        <td className="px-6 py-4">{deviceModel.screen_type}</td>
+                        <td className={`px-6 py-4 text-right font-bold ${glassModel.screen_type === deviceModel.screen_type ? 'text-green-400' : 'text-red-400'}`}>
+                          {glassModel.screen_type === deviceModel.screen_type ? 'MATCH' : 'MISMATCH'}
+                        </td>
+                      </tr>
+                      <tr className="hover:bg-white/5 transition-colors">
+                        <td className="px-6 py-4 font-medium text-white">Notch Type</td>
+                        <td className="px-6 py-4">{glassModel.notch_type}</td>
+                        <td className="px-6 py-4">{deviceModel.notch_type}</td>
+                        <td className={`px-6 py-4 text-right font-bold ${glassModel.notch_type === deviceModel.notch_type ? 'text-green-400' : 'text-red-400'}`}>
+                          {glassModel.notch_type === deviceModel.notch_type ? 'MATCH' : 'MISMATCH'}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+
+
+                {/* In-Display FPS Warning */}
+                {getFingerprintWarning(deviceModel) && (
+                  <div className="mt-3 p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl flex gap-3 items-start">
+                    <span className="text-xl shrink-0">👆</span>
+                    <p className="text-xs text-orange-200 leading-relaxed">{getFingerprintWarning(deviceModel)}</p>
+                  </div>
+                )}
+
+                {/* BBK Family Note */}
+                {result.color_code !== 'RED' && getBrandFamily(glassModel.brand) === 'BBK' && getBrandFamily(deviceModel.brand) === 'BBK' && glassModel.brand !== deviceModel.brand && (
+                  <div className="mt-3 p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl flex gap-3 items-start">
+                    <span className="text-xl shrink-0">⭐</span>
+                    <p className="text-xs text-purple-200 leading-relaxed">
+                      <span className="font-bold">BBK Family Cross-Match</span> — {glassModel.brand} and {deviceModel.brand} are both BBK family brands (OPPO/Vivo/Realme/OnePlus/iQOO) and often share identical display dimensions. This is a commonly successful cross-brand fit.
+                    </p>
+                  </div>
+                )}
+
+                {/* Case-Friendly Note */}
+                {result.color_code !== 'RED' && (
+                  <div className="mt-3 p-3 bg-white/5 border border-white/5 rounded-xl flex gap-3 items-start">
+                    <span className="text-base shrink-0">{glassType === 'Type B' ? '⚠️' : '✅'}</span>
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                      {glassType === 'Type B'
+                        ? 'Full-cover (Type B) glass has black borders — may conflict with thick cases. Test case fit after installing.'
+                        : 'Clear (Type A) glass is usually case-friendly — no black borders to conflict with case edges.'}
+                    </p>
+                  </div>
+                )}
+
+                {/* Failure Mode Warnings */}
                 {(() => {
-                  const conf = getConfidenceScore(glassModel, deviceModel, result);
-                  return conf ? (
-                    <div className="mb-6 bg-black/20 rounded-2xl p-4 border border-white/5">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Fit Confidence</p>
-                        <span className={`text-xs font-bold ${conf.color}`}>{conf.score}% — {conf.label}</span>
-                      </div>
-                      <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                        <div className={`h-2 rounded-full transition-all duration-700 ${conf.bar}`} style={{ width: `${conf.score}%` }}></div>
-                      </div>
+                  const warns = getFailureWarnings(glassModel, deviceModel, result, glassType);
+                  return warns.length > 0 ? (
+                    <div className="mt-4 space-y-2">
+                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">⚠️ Risk Factors</p>
+                      {warns.map((w, i) => (
+                        <div key={i} className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                          <p className="text-xs text-red-300 leading-relaxed">{w}</p>
+                        </div>
+                      ))}
                     </div>
                   ) : null;
                 })()}
 
-                {/* Data Table */}
-                <div className="bg-slate-900/40 rounded-2xl border border-white/5 overflow-hidden">
-                  <div className="overflow-x-auto w-full">
-                    <table className="w-full text-sm text-left whitespace-nowrap md:whitespace-normal">
-                      <thead className="bg-white/5 text-xs text-slate-400 uppercase tracking-wider">
-                        <tr>
-                          <th className="px-6 py-4 font-semibold">Specification</th>
-                          <th className="px-6 py-4 font-semibold text-purple-300">Glass Model</th>
-                          <th className="px-6 py-4 font-semibold text-blue-300">Device Model</th>
-                          <th className="px-6 py-4 font-semibold text-right">Difference</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/5 text-slate-300">
-                        <tr className="hover:bg-white/5 transition-colors">
-                          <td className="px-6 py-4 font-medium text-white">Body Height</td>
-                          <td className="px-6 py-4">{glassModel.height_mm}mm</td>
-                          <td className="px-6 py-4">{deviceModel.height_mm}mm</td>
-                          <td className={`px-6 py-4 text-right font-bold ${Math.abs(result.hDiff) > 1.0 ? 'text-red-400' : 'text-green-400'}`}>
-                            {result.height_difference}
-                          </td>
-                        </tr>
-                        <tr className="hover:bg-white/5 transition-colors">
-                          <td className="px-6 py-4 font-medium text-white">Body Width</td>
-                          <td className="px-6 py-4">{glassModel.width_mm}mm</td>
-                          <td className="px-6 py-4">{deviceModel.width_mm}mm</td>
-                          <td className={`px-6 py-4 text-right font-bold ${Math.abs(result.wDiff) > 1.0 ? 'text-red-400' : 'text-green-400'}`}>
-                            {result.width_difference}
-                          </td>
-                        </tr>
-
-                        {/* Display Dimensions */}
-                        <tr className="bg-black/20 hover:bg-black/30 transition-colors">
-                          <td className="px-6 py-4 font-medium text-purple-200 pl-8 border-l-4 border-purple-500/30">Display Height</td>
-                          <td className="px-6 py-4 text-slate-400">{glassModel.display_height_mm || '-'}mm</td>
-                          <td className="px-6 py-4 text-slate-400">{deviceModel.display_height_mm || '-'}mm</td>
-                          <td className="px-6 py-4 text-right font-mono text-slate-400">
-                            {glassModel.display_height_mm && deviceModel.display_height_mm
-                              ? (glassModel.display_height_mm - deviceModel.display_height_mm).toFixed(2) + 'mm'
-                              : '-'}
-                          </td>
-                        </tr>
-                        <tr className="bg-black/20 hover:bg-black/30 transition-colors">
-                          <td className="px-6 py-4 font-medium text-purple-200 pl-8 border-l-4 border-purple-500/30">Display Width</td>
-                          <td className="px-6 py-4 text-slate-400">{glassModel.display_width_mm || '-'}mm</td>
-                          <td className="px-6 py-4 text-slate-400">{deviceModel.display_width_mm || '-'}mm</td>
-                          <td className="px-6 py-4 text-right font-mono text-slate-400">
-                            {glassModel.display_width_mm && deviceModel.display_width_mm
-                              ? (glassModel.display_width_mm - deviceModel.display_width_mm).toFixed(2) + 'mm'
-                              : '-'}
-                          </td>
-                        </tr>
-
-                        <tr className="hover:bg-white/5 transition-colors">
-                          <td className="px-6 py-4 font-medium text-white">Screen Size</td>
-                          <td className="px-6 py-4">{glassModel.screen_size}"</td>
-                          <td className="px-6 py-4">{deviceModel.screen_size}"</td>
-                          <td className="px-6 py-4 text-right font-bold text-slate-400">
-                            {Math.abs(deviceModel.screen_size - glassModel.screen_size).toFixed(2)}"
-                          </td>
-                        </tr>
-                        <tr className="hover:bg-white/5 transition-colors">
-                          <td className="px-6 py-4 font-medium text-white">Screen Type</td>
-                          <td className="px-6 py-4">{glassModel.screen_type}</td>
-                          <td className="px-6 py-4">{deviceModel.screen_type}</td>
-                          <td className={`px-6 py-4 text-right font-bold ${glassModel.screen_type === deviceModel.screen_type ? 'text-green-400' : 'text-red-400'}`}>
-                            {glassModel.screen_type === deviceModel.screen_type ? 'MATCH' : 'MISMATCH'}
-                          </td>
-                        </tr>
-                        <tr className="hover:bg-white/5 transition-colors">
-                          <td className="px-6 py-4 font-medium text-white">Notch Type</td>
-                          <td className="px-6 py-4">{glassModel.notch_type}</td>
-                          <td className="px-6 py-4">{deviceModel.notch_type}</td>
-                          <td className={`px-6 py-4 text-right font-bold ${glassModel.notch_type === deviceModel.notch_type ? 'text-green-400' : 'text-red-400'}`}>
-                            {glassModel.notch_type === deviceModel.notch_type ? 'MATCH' : 'MISMATCH'}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-
-
-                  {/* In-Display FPS Warning */}
-                  {getFingerprintWarning(deviceModel) && (
-                    <div className="mt-3 p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl flex gap-3 items-start">
-                      <span className="text-xl shrink-0">👆</span>
-                      <p className="text-xs text-orange-200 leading-relaxed">{getFingerprintWarning(deviceModel)}</p>
-                    </div>
-                  )}
-
-                  {/* BBK Family Note */}
-                  {result.color_code !== 'RED' && getBrandFamily(glassModel.brand) === 'BBK' && getBrandFamily(deviceModel.brand) === 'BBK' && glassModel.brand !== deviceModel.brand && (
-                    <div className="mt-3 p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl flex gap-3 items-start">
-                      <span className="text-xl shrink-0">⭐</span>
-                      <p className="text-xs text-purple-200 leading-relaxed">
-                        <span className="font-bold">BBK Family Cross-Match</span> — {glassModel.brand} and {deviceModel.brand} are both BBK family brands (OPPO/Vivo/Realme/OnePlus/iQOO) and often share identical display dimensions. This is a commonly successful cross-brand fit.
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Case-Friendly Note */}
-                  {result.color_code !== 'RED' && (
-                    <div className="mt-3 p-3 bg-white/5 border border-white/5 rounded-xl flex gap-3 items-start">
-                      <span className="text-base shrink-0">{glassType === 'Type B' ? '⚠️' : '✅'}</span>
-                      <p className="text-xs text-slate-400 leading-relaxed">
-                        {glassType === 'Type B'
-                          ? 'Full-cover (Type B) glass has black borders — may conflict with thick cases. Test case fit after installing.'
-                          : 'Clear (Type A) glass is usually case-friendly — no black borders to conflict with case edges.'}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Failure Mode Warnings */}
-                  {(() => {
-                    const warns = getFailureWarnings(glassModel, deviceModel, result, glassType);
-                    return warns.length > 0 ? (
-                      <div className="mt-4 space-y-2">
-                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">⚠️ Risk Factors</p>
-                        {warns.map((w, i) => (
-                          <div key={i} className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
-                            <p className="text-xs text-red-300 leading-relaxed">{w}</p>
+                {/* Installation Tips */}
+                {result.color_code !== 'RED' && (() => {
+                  const tips = getInstallTips(deviceModel.notch_type, deviceModel.screen_type, glassType);
+                  return (
+                    <details className="mt-4 group">
+                      <summary className="cursor-pointer text-xs font-semibold text-slate-400 uppercase tracking-wider hover:text-white transition-colors select-none">
+                        📋 Installation Tips ({tips.length} steps) ▸
+                      </summary>
+                      <div className="mt-3 space-y-2 pl-2">
+                        {tips.map((tip, i) => (
+                          <div key={i} className="flex gap-2.5 items-start">
+                            <span className="text-xs font-bold text-slate-500 shrink-0 mt-0.5">{i + 1}.</span>
+                            <p className="text-xs text-slate-300 leading-relaxed">{tip}</p>
                           </div>
                         ))}
                       </div>
-                    ) : null;
-                  })()}
+                    </details>
+                  );
+                })()}
 
-                  {/* Installation Tips */}
-                  {result.color_code !== 'RED' && (() => {
-                    const tips = getInstallTips(deviceModel.notch_type, deviceModel.screen_type, glassType);
-                    return (
-                      <details className="mt-4 group">
-                        <summary className="cursor-pointer text-xs font-semibold text-slate-400 uppercase tracking-wider hover:text-white transition-colors select-none">
-                          📋 Installation Tips ({tips.length} steps) ▸
-                        </summary>
-                        <div className="mt-3 space-y-2 pl-2">
-                          {tips.map((tip, i) => (
-                            <div key={i} className="flex gap-2.5 items-start">
-                              <span className="text-xs font-bold text-slate-500 shrink-0 mt-0.5">{i + 1}.</span>
-                              <p className="text-xs text-slate-300 leading-relaxed">{tip}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </details>
-                    );
-                  })()}
-
-                  {/* Copy Result + New Check */}
-                  <div className="mt-6 flex justify-center gap-3">
-                    <button onClick={copyResult} className="flex items-center gap-2 px-6 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-semibold text-white border border-white/10 transition-all">
-                      📋 Copy Result
-                    </button>
-                    <button onClick={() => { setResult(null); setGlassModel(null); setDeviceModel(null); setGlassQuery(''); setDeviceQuery(''); }} className="flex items-center gap-2 px-6 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-sm font-semibold text-slate-400 hover:text-white border border-white/10 transition-all">
-                      🔄 New Check
-                    </button>
-                  </div>
+                {/* Copy Result + New Check */}
+                <div className="mt-6 flex justify-center gap-3">
+                  <button onClick={copyResult} className="flex items-center gap-2 px-6 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-semibold text-white border border-white/10 transition-all">
+                    📋 Copy Result
+                  </button>
+                  <button onClick={() => { setResult(null); setGlassModel(null); setDeviceModel(null); setGlassQuery(''); setDeviceQuery(''); }} className="flex items-center gap-2 px-6 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-sm font-semibold text-slate-400 hover:text-white border border-white/10 transition-all">
+                    🔄 New Check
+                  </button>
                 </div>
               </div>
             </div>
-          )
-        }
+          </div>
+        )
+      }
 
-        {/* Recent History */}
-        {
-          history.length > 0 && (
-            <div className="mt-8 bg-white/5 backdrop-blur-md rounded-2xl p-5 border border-white/10 shadow-xl">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">🗓️ Recent Checks</p>
-                <button onClick={() => { setHistory([]); localStorage.removeItem('glassCheckerHistory'); }} className="text-[10px] text-slate-600 hover:text-red-400 transition-colors">Clear</button>
+      {/* Recent History */}
+      {
+        history.length > 0 && (
+          <div className="mt-8 bg-white/5 backdrop-blur-md rounded-2xl p-5 border border-white/10 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">🗓️ Recent Checks</p>
+              <button onClick={() => { setHistory([]); localStorage.removeItem('glassCheckerHistory'); }} className="text-[10px] text-slate-600 hover:text-red-400 transition-colors">Clear</button>
+            </div>
+            <div className="space-y-2">
+              {history.map((h, i) => {
+                const colorMap = { GREEN: 'bg-green-500/20 text-green-300 border-green-500/30', TEAL: 'bg-teal-500/20 text-teal-300 border-teal-500/30', YELLOW: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30', RED: 'bg-red-500/20 text-red-300 border-red-500/30' };
+                return (
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-slate-900/40 hover:bg-slate-900/60 transition-colors cursor-pointer group"
+                    onClick={() => {
+                      const g = phones.find(p => p.model === h.glass.model);
+                      const d = phones.find(p => p.model === h.device.model);
+                      if (g && d) { setGlassModel(g); setDeviceModel(d); setResult(null); }
+                    }}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-semibold text-white truncate">
+                        <span className="text-purple-300">{h.glass.model}</span>
+                        <span className="text-slate-500 mx-1">→</span>
+                        <span className="text-blue-300">{h.device.model}</span>
+                      </div>
+                      <div className="text-[10px] text-slate-600 mt-0.5">{h.ts}</div>
+                    </div>
+                    <span className={`text-[9px] font-bold px-2 py-1 rounded-full border shrink-0 ${colorMap[h.color] || 'bg-slate-700 text-slate-300 border-slate-600'}`}>
+                      {h.status.replace('COMPATIBLE', '✓ OK').replace('NOT COMPATIBLE', '✗ NO').replace('CAUTION: CHECK BEZELS', '⚠ CHECK').replace('PERFECT FIT', '★ PERFECT')}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )
+      }
+    </div >
+
+      {/* === FIXED FAB — Add/Edit Manual Model === */ }
+  <button
+    onClick={() => setShowManualForm(true)}
+    title="Add or Edit a Phone Model"
+    className="fixed bottom-6 right-5 z-40 flex items-center gap-2 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-bold rounded-full shadow-2xl shadow-purple-900/50 transition-all hover:scale-105 active:scale-95 py-3 px-4 border border-purple-400/30"
+  >
+    <span className="text-lg leading-none">✏️</span>
+    <span className="text-sm hidden sm:inline">Add / Edit Model</span>
+    <span className="text-sm sm:hidden">Edit</span>
+  </button>
+
+  {/* === SLIDE-UP MODAL DRAWER === */ }
+  {
+    showManualForm && (
+      <>
+        {/* Backdrop */}
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowManualForm(false)}
+        />
+
+        {/* Drawer */}
+        <div className="fixed bottom-0 left-0 right-0 z-50 max-h-[93dvh] overflow-y-auto rounded-t-3xl bg-slate-900 border-t border-white/10 shadow-2xl animate-slide-up">
+          {/* Drag Handle */}
+          <div className="flex justify-center pt-3 pb-1">
+            <div className="w-10 h-1 bg-white/20 rounded-full" />
+          </div>
+
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 sticky top-0 bg-slate-900 z-10">
+            <div className="flex items-center gap-3">
+              <span className="p-2 bg-purple-500/20 rounded-xl text-purple-300">✏️</span>
+              <div>
+                <h3 className="text-base font-bold text-white">Add / Edit Model</h3>
+                <p className="text-[11px] text-slate-400">Manual database entry</p>
               </div>
-              <div className="space-y-2">
-                {history.map((h, i) => {
-                  const colorMap = { GREEN: 'bg-green-500/20 text-green-300 border-green-500/30', TEAL: 'bg-teal-500/20 text-teal-300 border-teal-500/30', YELLOW: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30', RED: 'bg-red-500/20 text-red-300 border-red-500/30' };
-                  return (
-                    <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-slate-900/40 hover:bg-slate-900/60 transition-colors cursor-pointer group"
+            </div>
+            <button
+              onClick={() => setShowManualForm(false)}
+              className="p-2 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Form Body */}
+          <form onSubmit={handleManualSubmit} className="p-5 space-y-4">
+
+            {/* Load Existing */}
+            <div className="relative">
+              <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Load Existing Data to Edit</label>
+              <input
+                type="text"
+                placeholder="🔍 Search model to edit..."
+                className="w-full bg-slate-800 border border-purple-500/30 rounded-xl px-4 py-2.5 text-white text-sm focus:ring-2 focus:ring-purple-500/50 outline-none placeholder-slate-500"
+                value={editQuery}
+                onChange={(e) => setEditQuery(e.target.value)}
+              />
+              {editQuery && (
+                <div className="absolute w-full bg-slate-800 border border-slate-600 max-h-40 overflow-y-auto rounded-xl shadow-xl left-0 top-full mt-1 z-50">
+                  {phones.filter(p => p.model.toLowerCase().includes(editQuery.toLowerCase())).slice(0, 10).map(p => (
+                    <div
+                      key={p.model}
+                      className="p-3 text-sm text-slate-300 hover:bg-slate-700 cursor-pointer border-b border-slate-700/50 last:border-0"
                       onClick={() => {
-                        const g = phones.find(p => p.model === h.glass.model);
-                        const d = phones.find(p => p.model === h.device.model);
-                        if (g && d) { setGlassModel(g); setDeviceModel(d); setResult(null); }
+                        setManualForm({
+                          model: p.model,
+                          brand: p.brand,
+                          height_mm: p.height_mm || '',
+                          width_mm: p.width_mm || '',
+                          screen_size: p.screen_size || '',
+                          resolution: p.resolution || '',
+                          screen_type: p.screen_type || 'Flat',
+                          notch_type: p.notch_type || 'Punch Hole',
+                          image_url: p.image_url || '',
+                          view360_url: p.view360_url || ''
+                        });
+                        setEditQuery('');
                       }}
                     >
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs font-semibold text-white truncate">
-                          <span className="text-purple-300">{h.glass.model}</span>
-                          <span className="text-slate-500 mx-1">→</span>
-                          <span className="text-blue-300">{h.device.model}</span>
-                        </div>
-                        <div className="text-[10px] text-slate-600 mt-0.5">{h.ts}</div>
-                      </div>
-                      <span className={`text-[9px] font-bold px-2 py-1 rounded-full border shrink-0 ${colorMap[h.color] || 'bg-slate-700 text-slate-300 border-slate-600'}`}>
-                        {h.status.replace('COMPATIBLE', '✓ OK').replace('NOT COMPATIBLE', '✗ NO').replace('CAUTION: CHECK BEZELS', '⚠ CHECK').replace('PERFECT FIT', '★ PERFECT')}
-                      </span>
+                      <span className="font-bold text-white">{p.brand}</span> {p.model}
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          )
-        }
-      </div >
-
-      {/* === FIXED FAB — Add/Edit Manual Model === */}
-      <button
-        onClick={() => setShowManualForm(true)}
-        title="Add or Edit a Phone Model"
-        className="fixed bottom-6 right-5 z-40 flex items-center gap-2 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-bold rounded-full shadow-2xl shadow-purple-900/50 transition-all hover:scale-105 active:scale-95 py-3 px-4 border border-purple-400/30"
-      >
-        <span className="text-lg leading-none">✏️</span>
-        <span className="text-sm hidden sm:inline">Add / Edit Model</span>
-        <span className="text-sm sm:hidden">Edit</span>
-      </button>
-
-      {/* === SLIDE-UP MODAL DRAWER === */}
-      {showManualForm && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
-            onClick={() => setShowManualForm(false)}
-          />
-
-          {/* Drawer */}
-          <div className="fixed bottom-0 left-0 right-0 z-50 max-h-[93dvh] overflow-y-auto rounded-t-3xl bg-slate-900 border-t border-white/10 shadow-2xl animate-slide-up">
-            {/* Drag Handle */}
-            <div className="flex justify-center pt-3 pb-1">
-              <div className="w-10 h-1 bg-white/20 rounded-full" />
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 sticky top-0 bg-slate-900 z-10">
-              <div className="flex items-center gap-3">
-                <span className="p-2 bg-purple-500/20 rounded-xl text-purple-300">✏️</span>
-                <div>
-                  <h3 className="text-base font-bold text-white">Add / Edit Model</h3>
-                  <p className="text-[11px] text-slate-400">Manual database entry</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowManualForm(false)}
-                className="p-2 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Form Body */}
-            <form onSubmit={handleManualSubmit} className="p-5 space-y-4">
-
-              {/* Load Existing */}
-              <div className="relative">
-                <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Load Existing Data to Edit</label>
-                <input
-                  type="text"
-                  placeholder="🔍 Search model to edit..."
-                  className="w-full bg-slate-800 border border-purple-500/30 rounded-xl px-4 py-2.5 text-white text-sm focus:ring-2 focus:ring-purple-500/50 outline-none placeholder-slate-500"
-                  value={editQuery}
-                  onChange={(e) => setEditQuery(e.target.value)}
-                />
-                {editQuery && (
-                  <div className="absolute w-full bg-slate-800 border border-slate-600 max-h-40 overflow-y-auto rounded-xl shadow-xl left-0 top-full mt-1 z-50">
-                    {phones.filter(p => p.model.toLowerCase().includes(editQuery.toLowerCase())).slice(0, 10).map(p => (
-                      <div
-                        key={p.model}
-                        className="p-3 text-sm text-slate-300 hover:bg-slate-700 cursor-pointer border-b border-slate-700/50 last:border-0"
-                        onClick={() => {
-                          setManualForm({
-                            model: p.model,
-                            brand: p.brand,
-                            height_mm: p.height_mm || '',
-                            width_mm: p.width_mm || '',
-                            screen_size: p.screen_size || '',
-                            resolution: p.resolution || '',
-                            screen_type: p.screen_type || 'Flat',
-                            notch_type: p.notch_type || 'Punch Hole',
-                            image_url: p.image_url || '',
-                            view360_url: p.view360_url || ''
-                          });
-                          setEditQuery('');
-                        }}
-                      >
-                        <span className="font-bold text-white">{p.brand}</span> {p.model}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Model + Brand */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Model Name *</label>
-                  <input required name="model" value={manualForm.model} onChange={handleManualChange} placeholder="e.g. My Phone Pro" className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Brand *</label>
-                  <input required name="brand" value={manualForm.brand} onChange={handleManualChange} placeholder="e.g. Samsung" className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
-                </div>
-              </div>
-
-              {/* Height + Width + Screen */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Height (mm) *</label>
-                  <input required type="number" step="0.01" name="height_mm" value={manualForm.height_mm} onChange={handleManualChange} placeholder="160.5" className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Width (mm) *</label>
-                  <input required type="number" step="0.01" name="width_mm" value={manualForm.width_mm} onChange={handleManualChange} placeholder="75.2" className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
-                </div>
-                <div className="col-span-2 sm:col-span-1">
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Screen (inch) *</label>
-                  <input required type="number" step="0.1" name="screen_size" value={manualForm.screen_size} onChange={handleManualChange} placeholder="6.7" className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
-                </div>
-              </div>
-
-              {/* Resolution + Image */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Resolution</label>
-                  <input name="resolution" value={manualForm.resolution} onChange={handleManualChange} placeholder="1080 x 2400" className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Image URL</label>
-                  <input name="image_url" value={manualForm.image_url} onChange={handleManualChange} placeholder="https://..." className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
-                </div>
-              </div>
-
-              {/* 360 URL */}
+            {/* Model + Brand */}
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">360° View URL <span className="text-slate-600">(Optional)</span></label>
-                <input name="view360_url" value={manualForm.view360_url || ''} onChange={handleManualChange} placeholder="https://... (YouTube/Sketchfab)" className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
+                <label className="block text-xs font-medium text-slate-400 mb-1.5">Model Name *</label>
+                <input required name="model" value={manualForm.model} onChange={handleManualChange} placeholder="e.g. My Phone Pro" className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
               </div>
-
-              {/* Screen Type + Notch */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Screen Type</label>
-                  <select name="screen_type" value={manualForm.screen_type} onChange={handleManualChange} className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none">
-                    <option value="Flat">Flat</option>
-                    <option value="Curved">Curved</option>
-                    <option value="2.5D">2.5D</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Notch Type</label>
-                  <select name="notch_type" value={manualForm.notch_type} onChange={handleManualChange} className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none">
-                    <option value="Punch Hole">Punch Hole</option>
-                    <option value="Dual Punch Hole">Dual Punch Hole</option>
-                    <option value="Waterdrop">Waterdrop</option>
-                    <option value="U Notch">U Notch</option>
-                    <option value="Wide Notch">Wide Notch</option>
-                    <option value="Dynamic Island">Dynamic Island</option>
-                    <option value="No Notch">No Notch</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Glass Thickness */}
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">Glass Thickness <span className="text-slate-600">(select if known)</span></label>
-                <select name="glass_thickness" value={manualForm.glass_thickness || ''} onChange={handleManualChange} className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none">
-                  <option value="">Unknown</option>
-                  <option value="0.2">0.2mm — Ultra-thin</option>
-                  <option value="0.3">0.3mm — Standard</option>
-                  <option value="0.33">0.33mm — Most common</option>
-                  <option value="0.4">0.4mm — Thick (may block FPS)</option>
+                <label className="block text-xs font-medium text-slate-400 mb-1.5">Brand *</label>
+                <input required name="brand" value={manualForm.brand} onChange={handleManualChange} placeholder="e.g. Samsung" className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
+              </div>
+            </div>
+
+            {/* Height + Width + Screen */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1.5">Height (mm) *</label>
+                <input required type="number" step="0.01" name="height_mm" value={manualForm.height_mm} onChange={handleManualChange} placeholder="160.5" className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1.5">Width (mm) *</label>
+                <input required type="number" step="0.01" name="width_mm" value={manualForm.width_mm} onChange={handleManualChange} placeholder="75.2" className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <label className="block text-xs font-medium text-slate-400 mb-1.5">Screen (inch) *</label>
+                <input required type="number" step="0.1" name="screen_size" value={manualForm.screen_size} onChange={handleManualChange} placeholder="6.7" className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
+              </div>
+            </div>
+
+            {/* Resolution + Image */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1.5">Resolution</label>
+                <input name="resolution" value={manualForm.resolution} onChange={handleManualChange} placeholder="1080 x 2400" className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1.5">Image URL</label>
+                <input name="image_url" value={manualForm.image_url} onChange={handleManualChange} placeholder="https://..." className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
+              </div>
+            </div>
+
+            {/* 360 URL */}
+            <div>
+              <label className="block text-xs font-medium text-slate-400 mb-1.5">360° View URL <span className="text-slate-600">(Optional)</span></label>
+              <input name="view360_url" value={manualForm.view360_url || ''} onChange={handleManualChange} placeholder="https://... (YouTube/Sketchfab)" className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
+            </div>
+
+            {/* Screen Type + Notch */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1.5">Screen Type</label>
+                <select name="screen_type" value={manualForm.screen_type} onChange={handleManualChange} className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none">
+                  <option value="Flat">Flat</option>
+                  <option value="Curved">Curved</option>
+                  <option value="2.5D">2.5D</option>
                 </select>
               </div>
-
-              {/* Submit + Cancel */}
-              <div className="flex gap-3 pt-2 pb-safe">
-                <button type="submit" disabled={loading} className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-green-900/20 disabled:opacity-50">
-                  {loading ? '⏳ Saving...' : '✅ Save Model'}
-                </button>
-                <button type="button" onClick={() => setShowManualForm(false)} className="px-5 py-3 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-xl border border-white/10 transition-all font-semibold text-sm">
-                  Cancel
-                </button>
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1.5">Notch Type</label>
+                <select name="notch_type" value={manualForm.notch_type} onChange={handleManualChange} className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none">
+                  <option value="Punch Hole">Punch Hole</option>
+                  <option value="Dual Punch Hole">Dual Punch Hole</option>
+                  <option value="Waterdrop">Waterdrop</option>
+                  <option value="U Notch">U Notch</option>
+                  <option value="Wide Notch">Wide Notch</option>
+                  <option value="Dynamic Island">Dynamic Island</option>
+                  <option value="No Notch">No Notch</option>
+                </select>
               </div>
-            </form>
-          </div>
-        </>
-      )}
+            </div>
+
+            {/* Glass Thickness */}
+            <div>
+              <label className="block text-xs font-medium text-slate-400 mb-1.5">Glass Thickness <span className="text-slate-600">(select if known)</span></label>
+              <select name="glass_thickness" value={manualForm.glass_thickness || ''} onChange={handleManualChange} className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none">
+                <option value="">Unknown</option>
+                <option value="0.2">0.2mm — Ultra-thin</option>
+                <option value="0.3">0.3mm — Standard</option>
+                <option value="0.33">0.33mm — Most common</option>
+                <option value="0.4">0.4mm — Thick (may block FPS)</option>
+              </select>
+            </div>
+
+            {/* Submit + Cancel */}
+            <div className="flex gap-3 pt-2 pb-safe">
+              <button type="submit" disabled={loading} className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-green-900/20 disabled:opacity-50">
+                {loading ? '⏳ Saving...' : '✅ Save Model'}
+              </button>
+              <button type="button" onClick={() => setShowManualForm(false)} className="px-5 py-3 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-xl border border-white/10 transition-all font-semibold text-sm">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </>
+    )
+  }
 
     </div >
 

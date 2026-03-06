@@ -1058,22 +1058,7 @@ function App() {
                   </div>
                 </div>
 
-                {/* Camera Cut Advisory */}
-                {(() => {
-                  const advice = getCameraCutAdvice(deviceModel.notch_type);
-                  return (
-                    <div className={`mt-4 p-4 rounded-xl border flex gap-3 items-start ${advice.cut ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-teal-500/10 border-teal-500/20'
-                      }`}>
-                      <span className="text-2xl shrink-0">{advice.icon}</span>
-                      <div>
-                        <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${advice.cut ? 'text-yellow-300' : 'text-teal-300'}`}>
-                          📷 Camera Cut Guide — {advice.label}
-                        </p>
-                        <p className="text-xs text-slate-300 leading-relaxed">{advice.tip}</p>
-                      </div>
-                    </div>
-                  );
-                })()}
+
 
                 {/* In-Display FPS Warning */}
                 {getFingerprintWarning(deviceModel) && (

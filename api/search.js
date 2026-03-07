@@ -44,9 +44,60 @@ function parseScreenSize(sizeStr) {
     return null;
 }
 
-async function getScreenTypeFromKimovil(brand, fullName) {
-    // Basic fallback logic for Vercel
-    return null;
+async function fetchKimovilScreenType(fullName, cfWorkerUrl) {
+    try {
+        const slug = fullName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        const targetUrl = `https://www.kimovil.com/en/where-to-buy-${slug}?q=gsmarena.com`;
+        const res = await fetch(`${cfWorkerUrl}?url=${encodeURIComponent(targetUrl)}`);
+        if (!res.ok) return null;
+        const html = await res.text();
+        const $ = cheerio.load(html);
+
+        const text = $("dl.k-dl, table, .kc-container").text().replace(/\s+/g, ' ').trim().toLowerCase();
+        if (text.includes("curved") || text.includes("dual edge")) return "Curved";
+        if (text.includes("2.5d") || text.includes("2.5 d")) return "2.5D";
+        return null;
+    } catch (e) {
+        console.error("[Search-API] Kimovil fetch error:", e.message);
+        return null;
+    }
+}
+
+async function fetchSmartprixNotchType(fullName, cfWorkerUrl) {
+    try {
+        const searchUrl = `https://www.smartprix.com/mobiles?q=${encodeURIComponent(fullName)}&gsmarena.com`;
+        const res = await fetch(`${cfWorkerUrl}?url=${encodeURIComponent(searchUrl)}`);
+        if (!res.ok) return null;
+        const searchHtml = await res.text();
+        const $s = cheerio.load(searchHtml);
+
+        let targetLink = null;
+        $s(".sm-product").each((i, el) => {
+            if (!targetLink) {
+                targetLink = "https://www.smartprix.com" + $s(el).find("a").attr("href") + "?q=gsmarena.com";
+            }
+        });
+
+        if (!targetLink) return null;
+
+        const detailRes = await fetch(`${cfWorkerUrl}?url=${encodeURIComponent(targetLink)}`);
+        if (!detailRes.ok) return null;
+        const detailHtml = await detailRes.text();
+        const $d = cheerio.load(detailHtml);
+
+        const notchText = ($d("td:contains('Notch')").next().text() || $d("td:contains('Punch Hole')").text() || "").toLowerCase();
+
+        if (notchText.includes("punch hole")) return "Punch Hole";
+        if (notchText.includes("water drop") || notchText.includes("waterdrop")) return "Waterdrop";
+        if (notchText.includes("dynamic island")) return "Dynamic Island";
+        if (notchText.includes("pop-up") || notchText.includes("popup")) return "Popup Camera";
+        if (notchText.includes("yes")) return "Wide Notch";
+
+        return null;
+    } catch (e) {
+        console.error("[Search-API] Smartprix fetch error:", e.message);
+        return null;
+    }
 }
 
 async function detectNotchType($prod, brand, fullName) {
@@ -155,10 +206,18 @@ export default async function handler(req, res) {
 
         const scraperUrl = `${cfWorkerUrl}?url=${encodeURIComponent(productUrl)}`;
 
-        console.log(`[Search-API] Scraping via Cloudflare Worker: ${fullName}`);
-        const scraperRes = await fetch(scraperUrl);
-        if (!scraperRes.ok) throw new Error(`Cloudflare Proxy Error HTTP ${scraperRes.status}`);
-        const html = await scraperRes.text();
+        console.log(`[Search-API] Executing concurrent scraper tasks for: ${fullName}`);
+
+        const [gsmRes, kimovilScreen, smartprixNotch] = await Promise.all([
+            fetch(scraperUrl).then(async r => {
+                if (!r.ok) throw new Error(`GSMArena Proxy Error HTTP ${r.status}`);
+                return r.text();
+            }),
+            fetchKimovilScreenType(fullName, cfWorkerUrl),
+            fetchSmartprixNotchType(fullName, cfWorkerUrl)
+        ]);
+
+        const html = gsmRes;
 
         const $prod = cheerio.load(html);
         const extractedBrand = $prod('.specs-phone-name-title').text().trim().split(' ')[0] || bestBrand;
@@ -175,12 +234,18 @@ export default async function handler(req, res) {
         let resolution = "";
         if (resolutionText) resolution = resolutionText.split(',')[0].trim();
 
-        let screenType = "Flat";
-        const bodyText = $prod('body').text().toLowerCase();
-        if (bodyText.includes('curved display') || fullName.toLowerCase().includes('edge')) screenType = "Curved";
-        else if (bodyText.includes('2.5d')) screenType = "2.5D";
+        let screenType = kimovilScreen;
+        if (!screenType) {
+            screenType = "Flat";
+            const bodyText = $prod('body').text().toLowerCase();
+            if (bodyText.includes('curved display') || fullName.toLowerCase().includes('edge')) screenType = "Curved";
+            else if (bodyText.includes('2.5d')) screenType = "2.5D";
+        }
 
-        const notchType = await detectNotchType($prod, extractedBrand, fullName);
+        let notchType = smartprixNotch;
+        if (!notchType) {
+            notchType = await detectNotchType($prod, extractedBrand, fullName);
+        }
 
         let imageUrl = null;
         const imgElement = $prod('.specs-photo-main img');

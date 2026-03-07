@@ -478,7 +478,7 @@ function App() {
         {/* Header */}
         <div className="text-center px-2">
           <h1 className="text-4xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-300 mb-2 drop-shadow-sm">
-            Glass Finder
+            Tempered Glass Fit Checker
           </h1>
           <p className="text-slate-300 tracking-wide font-light text-sm sm:text-base">
             Tempered Glass Compatibility Checker

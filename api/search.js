@@ -53,9 +53,15 @@ async function fetchKimovilScreenType(fullName, cfWorkerUrl) {
         const html = await res.text();
         const $ = cheerio.load(html);
 
-        const text = $("dl.k-dl, table, .kc-container").text().replace(/\s+/g, ' ').trim().toLowerCase();
-        if (text.includes("curved") || text.includes("dual edge")) return "Curved";
-        if (text.includes("2.5d") || text.includes("2.5 d")) return "2.5D";
+        let text = "";
+        $("dt:contains('Screen'), dt:contains('Design'), td:contains('Screen')").each((i, el) => {
+            text += $(el).parent().text().replace(/\s+/g, ' ').trim().toLowerCase() + " ";
+        });
+
+        if (text) {
+            if (text.includes("curved") || text.includes("dual edge")) return "Curved";
+            if (text.includes("2.5d") || text.includes("2.5 d")) return "2.5D";
+        }
         return null;
     } catch (e) {
         console.error("[Search-API] Kimovil fetch error:", e.message);
@@ -72,9 +78,15 @@ async function fetchSmartprixNotchType(fullName, cfWorkerUrl) {
         const $s = cheerio.load(searchHtml);
 
         let targetLink = null;
+        const searchTerms = fullName.toLowerCase().split(" ").filter(t => t.length > 2);
+
         $s(".sm-product").each((i, el) => {
             if (!targetLink) {
-                targetLink = "https://www.smartprix.com" + $s(el).find("a").attr("href") + "?q=gsmarena.com";
+                const name = $s(el).find("h2").text().toLowerCase();
+                const isMatch = searchTerms.every(term => name.includes(term));
+                if (isMatch || name.includes(fullName.toLowerCase())) {
+                    targetLink = "https://www.smartprix.com" + $s(el).find("a").attr("href") + "?q=gsmarena.com";
+                }
             }
         });
 
@@ -116,7 +128,7 @@ async function detectNotchType($prod, brand, fullName) {
     const descText = metaDesc.toLowerCase();
 
     if (descText.includes('punch hole') || displayRes.includes('punch hole') || displayType.includes('punch hole') || descText.match(/(\d+)mp.+punch/)) return 'Punch Hole';
-    if (descText.includes('water drop') || displayRes.includes('waterdrop') || descText.includes('tear drop') || descText.includes('dewdrop')) return 'Waterdrop';
+    if (descText.includes('water drop') || displayRes.includes('waterdrop') || descText.includes('tear drop') || descText.includes('dewdrop') || descText.includes('dot drop') || descText.includes('v-notch') || descText.includes('u-notch')) return 'Waterdrop';
     if (descText.includes('dynamic island')) return 'Dynamic Island';
 
     return 'Punch Hole';

@@ -82,9 +82,13 @@ async function fetchSmartprixNotchType(fullName, cfWorkerUrl) {
 
         $s(".sm-product").each((i, el) => {
             if (!targetLink) {
-                const name = $s(el).find("h2").text().toLowerCase();
-                const isMatch = searchTerms.every(term => name.includes(term));
-                if (isMatch || name.includes(fullName.toLowerCase())) {
+                const name = $s(el).find("h2").text().toLowerCase().trim();
+                const escapedModel = fullName.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+                const strictRegex = new RegExp(`\\b${escapedModel}\\b`, "i");
+
+                const isMatch = Math.abs(name.length - fullName.length) < 15 && searchTerms.every(term => name.includes(term));
+
+                if (strictRegex.test(name) || isMatch) {
                     targetLink = "https://www.smartprix.com" + $s(el).find("a").attr("href") + "?q=gsmarena.com";
                 }
             }

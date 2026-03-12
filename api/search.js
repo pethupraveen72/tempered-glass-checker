@@ -263,6 +263,12 @@ export default async function handler(req, res) {
             notchType = await detectNotchType($prod, extractedBrand, fullName);
         }
 
+        // --- HARDCODE OVERRIDES ---
+        if (fullName.toLowerCase().includes("poco c")) {
+            screenType = "Flat";
+            notchType = "Waterdrop";
+        }
+
         let imageUrl = null;
         const imgElement = $prod('.specs-photo-main img');
         if (imgElement.length > 0) {

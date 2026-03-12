@@ -21,6 +21,7 @@ function App() {
 
   // Manual Entry State
   const [showManualForm, setShowManualForm] = useState(false);
+  const [showOnlineSearchForm, setShowOnlineSearchForm] = useState(false);
   const [manualForm, setManualForm] = useState({
     model: '',
     brand: '',
@@ -474,7 +475,7 @@ function App() {
         </div>
       )}
 
-      <div className="w-full max-w-2xl space-y-5 sm:space-y-8">
+      <div className="w-full max-w-2xl lg:max-w-6xl space-y-5 sm:space-y-8">
         {/* Header */}
         <div className="text-center px-2">
           <h1 className="text-4xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-300 mb-2 drop-shadow-sm">
@@ -490,47 +491,7 @@ function App() {
           )}
         </div>
 
-        {/* === SEARCH ONLINE — HERO PLACEMENT === */}
-        <div className="relative w-full">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-2xl blur-xl" />
-          <div className="relative bg-white/5 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-blue-500/20 shadow-2xl">
-            <div className="flex items-center gap-3 mb-3">
-              <span className="p-2 bg-blue-500/20 rounded-xl text-blue-300 text-xl">🌐</span>
-              <div>
-                <h3 className="text-base sm:text-lg font-bold text-white leading-tight">Search Newly Launched Model</h3>
-                <p className="text-[11px] text-slate-400">Auto-fetch specs from GSMArena &amp; save to cloud</p>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <input
-                type="text"
-                className="flex-1 bg-slate-900/70 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500/60 focus:border-transparent outline-none transition-all text-sm"
-                placeholder="e.g. Nothing Phone 2a, Vivo T3..."
-                id="online-search-input"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    const query = e.target.value;
-                    if (query) searchOnline(query, (val) => setDeviceModel(val), () => setDeviceQuery(''));
-                  }
-                }}
-              />
-              <button
-                onClick={() => {
-                  const query = document.getElementById('online-search-input').value;
-                  if (query) searchOnline(query, (val) => setDeviceModel(val), () => setDeviceQuery(''));
-                }}
-                disabled={loading}
-                className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-6 py-3 rounded-xl font-semibold transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:scale-100 shadow-lg shadow-blue-500/25 text-sm whitespace-nowrap"
-              >
-                {loading ? (
-                  <span className="flex items-center gap-2">⏳ Searching...</span>
-                ) : (
-                  <span className="flex items-center gap-2">🔍 Search</span>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
+
 
         {/* Brand Filter Bar */}
         <div className="bg-white/5 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-white/10 shadow-xl">
@@ -563,8 +524,11 @@ function App() {
 
 
 
-        {/* STEP 1: GLASS SELECTION CARD */}
-        <div className="bg-white/5 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-white/10 shadow-xl relative group">
+        {/* CARDS GRID (Desktop mode) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-8 items-start w-full">
+
+          {/* STEP 1: GLASS SELECTION CARD */}
+          <div className="bg-white/5 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-white/10 shadow-xl relative group">
           <div className="absolute top-0 right-0 p-4 opacity-10 font-black text-6xl text-purple-500 pointer-events-none select-none">1</div>
           <h2 className="text-lg sm:text-xl font-bold text-white mb-6 flex items-center gap-3">
             <span className="bg-purple-500 rounded-lg p-1.5 shadow-lg shadow-purple-500/30">
@@ -698,7 +662,7 @@ function App() {
         </div>
 
         {/* STEP 2: DEVICE SELECTION CARD */}
-        <div className="bg-white/5 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-white/10 shadow-xl relative mt-8">
+        <div className="bg-white/5 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-white/10 shadow-xl relative">
           <div className="absolute top-0 right-0 p-4 opacity-10 font-black text-6xl text-blue-500 pointer-events-none select-none">2</div>
           <h2 className="text-lg sm:text-xl font-bold text-white mb-6 flex items-center gap-3">
             <span className="bg-blue-500 rounded-lg p-1.5 shadow-lg shadow-blue-500/30">
@@ -905,8 +869,9 @@ function App() {
               </div>
             ) : null;
           })()}
-        </div>
-      </div >
+        </div >
+
+        </div> {/* End Cards Grid */}
 
       {/* Check Button */}
       < button
@@ -1155,18 +1120,76 @@ function App() {
           </div>
         )
       }
+      </div>
 
 
-      {/* === FIXED FAB — Add/Edit Manual Model === */ }
-  <button
-    onClick={() => setShowManualForm(true)}
-    title="Add or Edit a Phone Model"
-    className="fixed bottom-6 right-5 z-40 flex items-center gap-2 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-bold rounded-full shadow-2xl shadow-purple-900/50 transition-all hover:scale-105 active:scale-95 py-3 px-4 border border-purple-400/30"
-  >
-    <span className="text-lg leading-none">✏️</span>
-    <span className="text-sm hidden sm:inline">Add / Edit Model</span>
-    <span className="text-sm sm:hidden">Edit</span>
-  </button>
+      {/* === FIXED FABs === */}
+      <div className="fixed bottom-6 right-5 z-40 flex flex-col gap-3 items-end">
+        <button
+          onClick={() => setShowOnlineSearchForm(true)}
+          className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-full shadow-2xl shadow-blue-900/50 transition-all hover:scale-105 active:scale-95 py-3 px-4 border border-blue-400/30"
+        >
+          <span className="text-lg leading-none">🌐</span>
+          <span className="text-sm hidden sm:inline">Search Online</span>
+        </button>
+        <button
+          onClick={() => setShowManualForm(true)}
+          title="Add or Edit a Phone Model"
+          className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-bold rounded-full shadow-2xl shadow-purple-900/50 transition-all hover:scale-105 active:scale-95 py-3 px-4 border border-purple-400/30"
+        >
+          <span className="text-lg leading-none">✏️</span>
+          <span className="text-sm hidden sm:inline">Add / Edit Model</span>
+          <span className="text-sm sm:hidden">Edit</span>
+        </button>
+      </div>
+
+      {/* === ONLINE SEARCH MODAL DRAWER === */}
+      {
+        showOnlineSearchForm && (
+          <>
+            <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={() => setShowOnlineSearchForm(false)} />
+            <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl bg-slate-900 border-t border-white/10 shadow-2xl animate-slide-up pb-safe">
+              <div className="flex justify-center pt-3 pb-1">
+                <div className="w-10 h-1 bg-white/20 rounded-full" />
+              </div>
+              <div className="flex items-center justify-between px-5 py-3 border-b border-white/10">
+                <div className="flex items-center gap-3">
+                  <span className="p-2 bg-blue-500/20 rounded-xl text-blue-300">🌐</span>
+                  <div>
+                    <h3 className="text-base font-bold text-white">Search Online</h3>
+                    <p className="text-[11px] text-slate-400">GSMArena & Smartprix Scraper</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowOnlineSearchForm(false)} className="p-2 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white transition-colors">✕</button>
+              </div>
+              <div className="p-5 flex flex-col gap-4">
+                <input
+                  type="text"
+                  className="w-full bg-slate-800 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500/60 focus:border-transparent outline-none transition-all"
+                  placeholder="e.g. POCO C85, Vivo T3..."
+                  id="modal-online-search-input"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const query = e.target.value;
+                      if (query) { searchOnline(query, (val) => setDeviceModel(val), () => setDeviceQuery('')); setShowOnlineSearchForm(false); }
+                    }
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    const query = document.getElementById('modal-online-search-input').value;
+                    if (query) { searchOnline(query, (val) => setDeviceModel(val), () => setDeviceQuery('')); setShowOnlineSearchForm(false); }
+                  }}
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-6 py-3.5 rounded-xl font-bold transition-all shadow-lg shadow-blue-500/25 disabled:opacity-50"
+                >
+                  {loading ? '⏳ Searching Database...' : '🔍 Search & Add'}
+                </button>
+              </div>
+            </div>
+          </>
+        )
+      }
 
   {/* === SLIDE-UP MODAL DRAWER === */ }
   {

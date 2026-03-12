@@ -906,8 +906,6 @@ function App() {
             ) : null;
           })()}
         </div>
-        )
-          }
       </div >
 
       {/* Check Button */}
@@ -1157,7 +1155,7 @@ function App() {
           </div>
         )
       }
-    </div >
+
 
       {/* === FIXED FAB — Add/Edit Manual Model === */ }
   <button

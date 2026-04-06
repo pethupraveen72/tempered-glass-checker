@@ -499,10 +499,10 @@ function App() {
 
 
         {/* CARDS GRID (Desktop mode) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-8 items-start w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-8 items-stretch w-full">
 
           {/* STEP 1: GLASS SELECTION CARD */}
-          <div className="bg-white/5 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-white/10 shadow-xl relative group">
+          <div className="bg-white/5 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-white/10 shadow-xl relative group flex flex-col h-full">
           <div className="absolute top-0 right-0 p-4 opacity-10 font-black text-6xl text-purple-500 pointer-events-none select-none">1</div>
           <h2 className="text-lg sm:text-xl font-bold text-white mb-6 flex items-center gap-3">
             <span className="bg-purple-500 rounded-lg p-1.5 shadow-lg shadow-purple-500/30">
@@ -600,12 +600,12 @@ function App() {
           {/* Child Models (Compatible List) */}
           {
             glassModel && (
-              <div className="mt-4 p-4 bg-purple-500/5 rounded-xl border border-purple-500/10">
+              <div className="mt-4 p-4 bg-purple-500/5 rounded-xl border border-purple-500/10 flex-1 flex flex-col">
                 <h3 className="text-purple-300 font-bold mb-3 text-xs uppercase tracking-wide flex items-center gap-2">
                   <span>✨</span> Compatible Devices ({getBrandFamily(glassModel.brand)})
                 </h3>
 
-                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
+                <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
                   {childModels.length > 0 ? (
                     childModels.map(p => {
                       const hDiff = glassModel.height_mm - p.height_mm;
@@ -636,7 +636,7 @@ function App() {
         </div>
 
         {/* STEP 2: DEVICE SELECTION CARD */}
-        <div className="bg-white/5 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-white/10 shadow-xl relative">
+        <div className="bg-white/5 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-white/10 shadow-xl relative flex flex-col h-full">
           <div className="absolute top-0 right-0 p-4 opacity-10 font-black text-6xl text-blue-500 pointer-events-none select-none">2</div>
           <h2 className="text-lg sm:text-xl font-bold text-white mb-6 flex items-center gap-3">
             <span className="bg-blue-500 rounded-lg p-1.5 shadow-lg shadow-blue-500/30">
@@ -871,7 +871,7 @@ function App() {
       {/* RESULT CARD */}
       {
         result && (
-          <div className={`mt-12 w-full rounded-3xl overflow-hidden shadow-2xl animate-fade-in relative group ${result.isCompatible ? 'shadow-green-500/30' : 'shadow-red-500/30'}`}>
+          <div className={`mt-8 sm:mt-12 w-full rounded-3xl overflow-hidden shadow-2xl animate-fade-in relative group ${result.isCompatible ? 'shadow-green-500/30' : 'shadow-red-500/30'}`}>
             <div className={`absolute inset-0 opacity-40 ${result.isCompatible ? 'bg-gradient-to-br from-green-700 via-teal-900 to-slate-900' : 'bg-gradient-to-br from-red-700 via-rose-900 to-slate-900'}`}></div>
             <div className="absolute inset-0 backdrop-blur-3xl"></div>
 

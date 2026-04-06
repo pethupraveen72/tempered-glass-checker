@@ -703,6 +703,9 @@ function App() {
               </div>
             )}
           </div>
+        </div > /* End of Step 2 Card */
+
+        </div> {/* End Cards Grid */}
 
           {/* Live Image Comparison */}
           {
@@ -721,7 +724,7 @@ function App() {
                   )}
 
                   {/* GLASS PREVIEW — click to zoom */}
-                  <div className="text-center w-32 sm:w-40 relative group">
+                  <div className="text-center w-28 sm:w-40 shrink relative group">
                     {glassModel?.image_url ? (
                       <div className="relative cursor-zoom-in" onClick={() => setShowZoom(true)} title="Click to Zoom">
                         <img src={glassModel.image_url} alt={glassModel.model} className="w-full h-48 object-contain drop-shadow-2xl transition-transform transform group-hover:scale-105" onError={(e) => e.target.style.display = 'none'} />
@@ -740,7 +743,7 @@ function App() {
                   <div className="mb-12 text-slate-600 font-black text-xl italic opacity-50">VS</div>
 
                   {/* DEVICE PREVIEW — click to zoom */}
-                  <div className="text-center w-32 sm:w-40 relative group">
+                  <div className="text-center w-28 sm:w-40 shrink relative group">
                     {deviceModel?.image_url ? (
                       <div className="relative cursor-zoom-in" onClick={() => setShowZoom(true)} title="Click to Zoom">
                         <img src={deviceModel.image_url} alt={deviceModel.model} className="w-full h-48 object-contain drop-shadow-2xl transition-transform transform group-hover:scale-105" onError={(e) => e.target.style.display = 'none'} />
@@ -854,9 +857,6 @@ function App() {
               </div>
             ) : null;
           })()}
-        </div >
-
-        </div> {/* End Cards Grid */}
 
       {/* Check Button */}
       < button

@@ -8,7 +8,7 @@ function App() {
   const [glassQuery, setGlassQuery] = useState('');
   const [deviceQuery, setDeviceQuery] = useState('');
   const [result, setResult] = useState(null);
-  const [onlineQuery, setOnlineQuery] = useState('');
+
   const [glassType, setGlassType] = useState('Type A');
   const [brandFilter, setBrandFilter] = useState('All'); // Brand filter state
   const [toast, setToast] = useState(null); // { msg, type: 'success'|'error' }
@@ -151,20 +151,6 @@ function App() {
     return brand.charAt(0).toUpperCase() + brand.slice(1);
   };
 
-  // Helper: Camera cut advice based on notch type (standardized values)
-  const getCameraCutAdvice = (notch_type) => {
-    const n = (notch_type || '').trim();
-    if (n === 'Punch Hole') return { cut: false, label: 'No Cut Needed', icon: '⦿', tip: 'Punch-hole display — the camera hole is cut into the screen itself. Use glass with no top notch cut.' };
-    if (n === 'Dual Punch Hole') return { cut: false, label: 'No Cut Needed', icon: '⦿⦿', tip: 'Dual punch-hole display — two camera holes cut into the screen. Use glass with no notch cut at the top.' };
-    if (n === 'Waterdrop') return { cut: true, label: 'Waterdrop Cut Required', icon: '💧', tip: 'Waterdrop/dewdrop notch — glass needs a small V or U-shaped cutout at the top for camera visibility.' };
-    if (n === 'U Notch') return { cut: true, label: 'U-Cut Required', icon: '∪', tip: 'U-shaped notch — glass needs a U-cut at the top. Ensure the cut width matches the notch exactly.' };
-    if (n === 'Wide Notch') return { cut: true, label: 'Wide Cut Required', icon: '▬', tip: 'Wide/M-notch display — glass needs a wide top cutout. Verify the notch width matches the glass cut.' };
-    if (n === 'Dynamic Island') return { cut: false, label: 'No Cut Needed', icon: '💊', tip: 'Dynamic Island (Apple) — uncut glass fits around the capsule-style display area without interference.' };
-    if (n === 'No Notch') return { cut: false, label: 'No Cut Needed', icon: '▭', tip: 'No notch/pop-up/under-display camera — use full-edge coverage glass with no top cutout.' };
-    // Fallback
-    return { cut: false, label: 'No Cut Needed', icon: '▭', tip: 'Full-screen display — no notch cut required on the glass.' };
-  };
-
   // Helper: Confidence score (0–100)
   const getConfidenceScore = (glass, device, result) => {
     if (!glass || !device || !result) return null;
@@ -212,18 +198,6 @@ function App() {
     return warnings;
   };
 
-  // Helper: Installation tips per display type
-  const getInstallTips = (notch_type, screen_type, glassType) => {
-    const tips = ['🧹 Clean the screen with a microfiber cloth and remove all dust before applying.', '💨 Use the included dust sticker to pick up any remaining particles in corners.'];
-    const n = (notch_type || '').toLowerCase();
-    if (n.includes('punch hole')) tips.push('⦿ Align the camera hole cutout first, then press edges down from center outward.');
-    else if (n.includes('wide notch')) tips.push('▬ Align the top notch cut-out with camera area before pressing down.');
-    else if (n.includes('waterdrop') || n.includes('drop')) tips.push('💧 Align the V/U notch cut to the camera, then press from top to bottom.');
-    if ((screen_type || '').toLowerCase().includes('amoled')) tips.push('👆 Avoid pressing hard near the fingerprint zone — air bubbles here will block the sensor.');
-    if (glassType === 'Type B') tips.push('🖤 Press from center outward and ensure black borders are seated flush against the bezel.');
-    tips.push('🕐 Wait 24–48 hours for adhesive to fully cure before applying a case.');
-    return tips;
-  };
 
   const searchOnline = async (query, setModel, setQuery) => {
     if (!query) return;
@@ -735,7 +709,16 @@ function App() {
             (glassModel || deviceModel) && (
               <div className="mt-8 pt-8 border-t border-white/5 animate-fade-in">
                 <h3 className="text-center text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Visual Comparison</h3>
-                <div className="flex justify-center items-end gap-2 sm:gap-8 mb-6">
+                
+                <div className="relative flex justify-center items-end gap-2 sm:gap-8 mb-6 max-w-lg mx-auto">
+                  {/* Reference Measurement Lines for Corners */}
+                  {glassModel?.image_url && deviceModel?.image_url && (
+                    <div className="absolute top-0 left-0 w-full h-48 pointer-events-none z-0 flex flex-col justify-between py-3 px-2 sm:px-6 opacity-60 mix-blend-screen">
+                      <div className="w-full border-t border-dashed border-cyan-400 shadow-[0_0_5px_rgba(34,211,238,0.5)]"></div>
+                      <div className="w-full border-t border-solid border-white/10"></div>
+                      <div className="w-full border-t border-dashed border-cyan-400 shadow-[0_0_5px_rgba(34,211,238,0.5)]"></div>
+                    </div>
+                  )}
 
                   {/* GLASS PREVIEW — click to zoom */}
                   <div className="text-center w-32 sm:w-40 relative group">
@@ -773,42 +756,7 @@ function App() {
                   </div>
                 </div>
 
-                {/* Corner Fit & Check Reminder */}
-                {glassModel && deviceModel && (
-                  <div className="flex flex-col items-center mt-2 mb-8 animate-fade-in w-full">
-                    <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 rounded-2xl p-4 w-full max-w-lg shadow-lg relative overflow-hidden">
-                      <div className="absolute top-0 right-0 p-2 opacity-10 text-4xl">⚠️</div>
-                      
-                      <h4 className="text-amber-400 font-bold uppercase tracking-wider text-xs mb-2 flex items-center gap-2">
-                        <span>📱</span>
-                        Visually Compare Phone Corners
-                      </h4>
-                      
-                      <p className="text-amber-100/80 text-xs sm:text-sm leading-relaxed mb-3">
-                        Even if screen sizes match, the curve of the corners might be different!
-                      </p>
-                      
-                      <div className="flex justify-between gap-3 text-xs font-bold w-full">
-                         <div className="flex-1 bg-green-500/20 border border-green-500/30 text-green-300 py-2 px-3 rounded-xl flex flex-col items-center gap-1 shadow-inner">
-                           <span className="text-sm">✅</span>
-                           <span>Corners Match = <span className="text-white bg-green-600 px-1.5 rounded text-[10px]">FIT</span></span>
-                         </div>
-                         <div className="flex-1 bg-red-500/20 border border-red-500/30 text-red-300 py-2 px-3 rounded-xl flex flex-col items-center gap-1 shadow-inner">
-                           <span className="text-sm">❌</span>
-                           <span>Mismatched = <span className="text-white bg-red-600 px-1.5 rounded text-[10px]">NOT FIT</span></span>
-                         </div>
-                      </div>
-                    </div>
-                    
-                    {!result && (
-                       <p className="mt-5 text-blue-400/80 text-xs sm:text-sm animate-bounce font-bold bg-blue-900/20 px-6 py-2 rounded-full border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.15)] flex items-center gap-2">
-                         <span>👇</span>
-                         Click Check Compatibility Below
-                         <span>👇</span>
-                       </p>
-                    )}
-                  </div>
-                )}
+
 
                 {/* Glass Model 360 button */}
                 {glassModel && (
@@ -1085,25 +1033,6 @@ function App() {
                   ) : null;
                 })()}
 
-                {/* Installation Tips */}
-                {result.color_code !== 'RED' && (() => {
-                  const tips = getInstallTips(deviceModel.notch_type, deviceModel.screen_type, glassType);
-                  return (
-                    <details className="mt-4 group">
-                      <summary className="cursor-pointer text-xs font-semibold text-slate-400 uppercase tracking-wider hover:text-white transition-colors select-none">
-                        📋 Installation Tips ({tips.length} steps) ▸
-                      </summary>
-                      <div className="mt-3 space-y-2 pl-2">
-                        {tips.map((tip, i) => (
-                          <div key={i} className="flex gap-2.5 items-start">
-                            <span className="text-xs font-bold text-slate-500 shrink-0 mt-0.5">{i + 1}.</span>
-                            <p className="text-xs text-slate-300 leading-relaxed">{tip}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </details>
-                  );
-                })()}
 
                 {/* Copy Result + New Check */}
                 <div className="mt-6 flex justify-center gap-3">

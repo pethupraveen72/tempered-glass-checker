@@ -703,7 +703,7 @@ function App() {
               </div>
             )}
           </div>
-        </div > /* End of Step 2 Card */
+        </div > {/* End of Step 2 Card */}
 
         </div> {/* End Cards Grid */}
 

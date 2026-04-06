@@ -773,6 +773,43 @@ function App() {
                   </div>
                 </div>
 
+                {/* Corner Fit & Check Reminder */}
+                {glassModel && deviceModel && (
+                  <div className="flex flex-col items-center mt-2 mb-8 animate-fade-in w-full">
+                    <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 rounded-2xl p-4 w-full max-w-lg shadow-lg relative overflow-hidden">
+                      <div className="absolute top-0 right-0 p-2 opacity-10 text-4xl">⚠️</div>
+                      
+                      <h4 className="text-amber-400 font-bold uppercase tracking-wider text-xs mb-2 flex items-center gap-2">
+                        <span>📱</span>
+                        Visually Compare Phone Corners
+                      </h4>
+                      
+                      <p className="text-amber-100/80 text-xs sm:text-sm leading-relaxed mb-3">
+                        Even if screen sizes match, the curve of the corners might be different!
+                      </p>
+                      
+                      <div className="flex justify-between gap-3 text-xs font-bold w-full">
+                         <div className="flex-1 bg-green-500/20 border border-green-500/30 text-green-300 py-2 px-3 rounded-xl flex flex-col items-center gap-1 shadow-inner">
+                           <span className="text-sm">✅</span>
+                           <span>Corners Match = <span className="text-white bg-green-600 px-1.5 rounded text-[10px]">FIT</span></span>
+                         </div>
+                         <div className="flex-1 bg-red-500/20 border border-red-500/30 text-red-300 py-2 px-3 rounded-xl flex flex-col items-center gap-1 shadow-inner">
+                           <span className="text-sm">❌</span>
+                           <span>Mismatched = <span className="text-white bg-red-600 px-1.5 rounded text-[10px]">NOT FIT</span></span>
+                         </div>
+                      </div>
+                    </div>
+                    
+                    {!result && (
+                       <p className="mt-5 text-blue-400/80 text-xs sm:text-sm animate-bounce font-bold bg-blue-900/20 px-6 py-2 rounded-full border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.15)] flex items-center gap-2">
+                         <span>👇</span>
+                         Click Check Compatibility Below
+                         <span>👇</span>
+                       </p>
+                    )}
+                  </div>
+                )}
+
                 {/* Glass Model 360 button */}
                 {glassModel && (
                   <button

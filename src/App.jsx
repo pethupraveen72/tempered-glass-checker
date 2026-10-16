@@ -36,7 +36,6 @@ function App() {
   const [result, setResult] = useState(null);
 
   const [glassType, setGlassType] = useState('Type A');
-  const [brandFilter, setBrandFilter] = useState('All'); // Brand filter state
   const [toast, setToast] = useState(null); // { msg, type: 'success'|'error' }
 
   const [loading, setLoading] = useState(false);
@@ -170,11 +169,6 @@ function App() {
     catch { showToast('Clipboard unavailable. Select and copy the result text instead.', 'error'); }
   };
 
-  // Derive unique sorted brand list from local DB
-  const brandList = ['All', ...Array.from(new Set(phones.map(p => p.brand).filter(Boolean))).sort()];
-  // Per-brand counts for stats
-  const brandCounts = phones.reduce((acc, p) => { acc[p.brand] = (acc[p.brand] || 0) + 1; return acc; }, {});
-
   const searchOnline = async (query, setModel, setQuery) => {
     if (!query) return;
     setLoading(true);
@@ -222,15 +216,13 @@ function App() {
   const filteredGlassOptions = glassQuery === '' ? [] : phones.filter(p => {
     const matchesQuery = p.model.toLowerCase().includes(glassQuery.toLowerCase()) ||
       (p.brand || '').toLowerCase().includes(glassQuery.toLowerCase());
-    const matchesBrand = brandFilter === 'All' || p.brand === brandFilter;
-    return matchesQuery && matchesBrand;
+    return matchesQuery;
   });
 
   const filteredDeviceOptions = deviceQuery === '' ? [] : phones.filter(p => {
     const matchesQuery = p.model.toLowerCase().includes(deviceQuery.toLowerCase()) ||
       (p.brand || '').toLowerCase().includes(deviceQuery.toLowerCase());
-    const matchesBrand = brandFilter === 'All' || p.brand === brandFilter;
-    return matchesQuery && matchesBrand;
+    return matchesQuery;
   });
 
   return (
@@ -259,39 +251,6 @@ function App() {
             {catalogueState === 'loading' ? 'Loading phone models…' : catalogueState === 'error' ? 'Catalogue unavailable. Reload the page to retry.' : phones.length + ' models · ' + (catalogueState === 'bundled' ? 'Bundled catalogue' : 'Online catalogue')}
           </p>
         </div>
-
-        {/* Brand Filter Bar */}
-        <div className="bg-white/5 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-white/10 shadow-xl">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">Filter by Brand</p>
-          <p className="text-xs text-slate-400 mb-3">Applies to both model searches. Choose All to compare across brands.</p>
-          <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 custom-scrollbar snap-x">
-            {brandList.map(brand => (
-              <button
-                key={brand}
-                aria-pressed={brandFilter === brand}
-                onClick={() => setBrandFilter(brand)}
-                className={`shrink-0 whitespace-nowrap px-3 py-2 rounded-full text-xs font-semibold border transition-all flex items-center gap-1.5 ${brandFilter === brand
-                  ? 'bg-purple-600 border-purple-400 text-white shadow-lg shadow-purple-500/30'
-                  : 'bg-white/5 border-white/10 text-slate-400 hover:border-purple-500/50 hover:text-white'
-                  }`}
-              >
-                {brand}
-                {brand !== 'All' && brandCounts[brand] && (
-                  <span className={`text-[9px] px-1 rounded-full ${brandFilter === brand ? 'bg-white/20 text-white' : 'bg-white/10 text-slate-500'}`}>
-                    {brandCounts[brand]}
-                  </span>
-                )}
-                {brand === 'All' && (
-                  <span className={`text-[9px] px-1 rounded-full ${brandFilter === brand ? 'bg-white/20 text-white' : 'bg-white/10 text-slate-500'}`}>
-                    {phones.length}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-
-
 
         {/* CARDS GRID (Desktop mode) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6 items-start w-full">

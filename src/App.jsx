@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from './supabaseClient';
-import { emptyMeasurements, evaluateCompatibility, formatMm } from './compatibility';
+import { emptyMeasurements, evaluateCompatibility, formatMm, formatDifference } from './compatibility';
 import { loadPhones } from './loadPhones';
 import Modal from './components/Modal';
 import PhoneImage from './components/PhoneImage';
@@ -143,8 +143,9 @@ function App() {
       'Glass Compatibility Check', 'Glass source: ' + glassModel.model, 'Target: ' + deviceModel.model, 'Mode: ' + glassType,
       'Physical glass (H × W): ' + formatMm(result.physical.height_mm) + ' × ' + formatMm(result.physical.width_mm),
       'Thickness: ' + formatMm(result.physical.thickness_mm),
-      'Body clearance per edge (top/bottom, left/right): ' + formatMm(result.vertical_clearance) + ', ' + formatMm(result.horizontal_clearance),
-      'Glass minus display (H, W): ' + formatMm(result.display_height_margin) + ', ' + formatMm(result.display_width_margin),
+      'Glass minus phone body (H, W): ' + result.height_difference + ', ' + result.width_difference,
+      'Body clearance per edge (top/bottom, left/right): ' + formatDifference(result.vertical_clearance) + ', ' + formatDifference(result.horizontal_clearance),
+      'Glass minus display (H, W): ' + formatDifference(result.display_height_margin) + ', ' + formatDifference(result.display_width_margin),
       'Result: ' + result.compatibility_status, result.reason_message,
     ].join('\n');
     try { await navigator.clipboard.writeText(text); showToast('Result copied to clipboard!'); }
@@ -574,10 +575,12 @@ function App() {
                   {[
                     ['Glass height × width', formatMm(result.physical.height_mm) + ' × ' + formatMm(result.physical.width_mm)],
                     ['Glass thickness (recorded only)', formatMm(result.physical.thickness_mm)],
-                    ['Top / bottom body clearance per edge', formatMm(result.vertical_clearance)],
-                    ['Left / right body clearance per edge', formatMm(result.horizontal_clearance)],
-                    ['Glass minus display height (total)', formatMm(result.display_height_margin)],
-                    ['Glass minus display width (total)', formatMm(result.display_width_margin)],
+                    ['Glass minus phone body height (total)', result.height_difference],
+                    ['Glass minus phone body width (total)', result.width_difference],
+                    ['Top / bottom body clearance per edge', formatDifference(result.vertical_clearance)],
+                    ['Left / right body clearance per edge', formatDifference(result.horizontal_clearance)],
+                    ['Glass minus display height (total)', formatDifference(result.display_height_margin)],
+                    ['Glass minus display width (total)', formatDifference(result.display_width_margin)],
                   ].map(([label, value]) => <div key={label} className="min-w-0 break-words"><dt className="text-xs text-slate-400">{label}</dt><dd className="mt-1 font-semibold">{value}</dd></div>)}
                 </dl>
                 <p className="mt-3 text-xs text-slate-400">Clearance assumes centred placement against the outer phone body. Negative clearance means overhang; a negative display margin means incomplete coverage. Display dimensions may be estimates. Thickness alone cannot confirm touch or fingerprint performance.</p>

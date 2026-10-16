@@ -8,6 +8,12 @@ export function positiveNumber(value) {
 }
 
 export const formatMm = value => value == null || !Number.isFinite(value) ? 'Unknown' : `${value.toFixed(2)} mm`;
+export function formatDifference(value, unit = 'mm') {
+  if (value == null || !Number.isFinite(value)) return 'Unknown';
+  const rounded = Number(value.toFixed(2));
+  const sign = rounded > 0 ? '+' : rounded < 0 ? '-' : '';
+  return `${sign}${Math.abs(rounded).toFixed(2)} ${unit}`;
+}
 const difference = (a, b) => a == null || b == null ? null : Math.round((a - b) * 100) / 100;
 const normalize = value => String(value || '').trim().toLowerCase();
 
@@ -21,7 +27,7 @@ export function evaluateCompatibility(glass, device, type, measurements = {}) {
   const wDiff = difference(physical.width_mm, bodyW);
   const base = {
     physical, hDiff, wDiff,
-    height_difference: formatMm(hDiff), width_difference: formatMm(wDiff),
+    height_difference: formatDifference(hDiff), width_difference: formatDifference(wDiff),
     vertical_clearance: hDiff == null ? null : -hDiff / 2,
     horizontal_clearance: wDiff == null ? null : -wDiff / 2,
     display_height_margin: difference(physical.height_mm, displayH),

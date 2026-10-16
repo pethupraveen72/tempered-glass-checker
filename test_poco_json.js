@@ -37,7 +37,7 @@ async function runTest(modelName) {
                 results.rawNotchText = notchText;
             }
         }
-    } catch(e) { }
+    } catch(e) { results.error = e.message; }
     return results;
 }
 

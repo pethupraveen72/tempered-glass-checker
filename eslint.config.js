@@ -5,7 +5,12 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // Downloaded scraper response, not application source.
+  globalIgnores(['dist', 'autocomplete_src.js']),
+  {
+    files: ['*.js', 'api/**/*.js', 'tests/**/*.js'],
+    languageOptions: { globals: globals.node },
+  },
   {
     files: ['**/*.{js,jsx}'],
     extends: [

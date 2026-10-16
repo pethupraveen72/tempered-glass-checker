@@ -1,6 +1,6 @@
 
 @echo off
-cd /d "c:\Users\Dell\Documents\Anti\tempered-glass-checker"
+cd /d "%~dp0"
 echo Starting Tempered Glass Checker...
 npm run dev
 pause

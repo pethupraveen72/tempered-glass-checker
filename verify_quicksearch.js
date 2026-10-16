@@ -15,7 +15,6 @@ async function run() {
         console.log('Status:', res.status);
         console.log('Type:', typeof res.data);
         if (typeof res.data === 'object') {
-            const keys = Object.keys(res.data); // It might be an array
             console.log('First item structure:', JSON.stringify(res.data[0], null, 2));
             console.log('Second item structure:', JSON.stringify(res.data[1], null, 2));
 

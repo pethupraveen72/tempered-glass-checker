@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 export default async function handler(req, res) {
     // CORS Headers
@@ -19,13 +19,22 @@ export default async function handler(req, res) {
     }
 
     try {
-        const body = req.body;
+        const body = req.body || {};
+        const positive = value => (typeof value === 'string' || typeof value === 'number') && Number.isFinite(Number(value)) && Number(value) > 0;
+        if (typeof body.model !== 'string' || !body.model.trim() || typeof body.brand !== 'string' || !body.brand.trim() ||
+            !positive(body.height_mm) || !positive(body.width_mm) || !positive(body.screen_size)) {
+            return res.status(400).json({ success: false, error: 'Model, brand and positive height, width and screen size are required' });
+        }
+        if (body.resolution != null && typeof body.resolution !== 'string') {
+            return res.status(400).json({ success: false, error: 'Resolution must be text' });
+        }
+        if (!supabase) return res.status(503).json({ success: false, error: 'Online database is not configured' });
 
         // Clean up data types before inserting to Postgres numeric fields
         const newPhone = {
             model: body.model.trim(),
             brand: body.brand.trim() || 'Unknown',
-            screen_size: body.screen_size || null,
+            screen_size: Number(body.screen_size),
             height_mm: body.height_mm ? parseFloat(body.height_mm) : null,
             width_mm: body.width_mm ? parseFloat(body.width_mm) : null,
             screen_type: body.screen_type || 'Flat',
@@ -33,6 +42,8 @@ export default async function handler(req, res) {
             resolution: body.resolution || null,
             image_url: body.image_url || null,
             view360_url: body.view360_url || null,  // fix: was missing from payload
+            display_height_mm: null,
+            display_width_mm: null,
         };
 
         if (!newPhone.model || !newPhone.height_mm || !newPhone.width_mm) {

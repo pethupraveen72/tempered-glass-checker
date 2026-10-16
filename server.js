@@ -1,0 +1,17 @@
+import 'dotenv/config';
+import express from 'express';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import search from './api/search.js';
+import manualEntry from './api/manual-entry.js';
+
+const app = express();
+const root = path.dirname(fileURLToPath(import.meta.url));
+app.use(express.json({ limit: '100kb' }));
+app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
+app.all('/api/search', search);
+app.all('/api/manual-entry', manualEntry);
+app.use('/api', (_req, res) => res.status(404).json({ error: 'Unknown API route' }));
+app.use(express.static(path.join(root, 'dist')));
+app.get('/{*path}', (_req, res) => res.sendFile(path.join(root, 'dist/index.html')));
+app.listen(process.env.PORT || 3000, '0.0.0.0', () => console.log('Glass Finder API ready'));

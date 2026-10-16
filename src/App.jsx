@@ -1,10 +1,15 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
+import { emptyMeasurements, evaluateCompatibility, formatMm, positiveNumber } from './compatibility';
+import { loadPhones } from './loadPhones';
 
 function App() {
   const [phones, setPhones] = useState([]);
-  const [glassModel, setGlassModel] = useState(null);
-  const [deviceModel, setDeviceModel] = useState(null);
+  const [glassModel, updateGlassModel] = useState(null);
+  const [measurements, setMeasurements] = useState(emptyMeasurements);
+  const setGlassModel = phone => { updateGlassModel(phone); setMeasurements(emptyMeasurements()); setResult(null); };
+  const [deviceModel, updateDeviceModel] = useState(null);
+  const setDeviceModel = phone => { updateDeviceModel(phone); setResult(null); };
   const [glassQuery, setGlassQuery] = useState('');
   const [deviceQuery, setDeviceQuery] = useState('');
   const [result, setResult] = useState(null);
@@ -43,7 +48,7 @@ function App() {
     e.preventDefault();
     setLoading(true);
     try {
-      const API_BASE = window.location.port === '5173' ? `http://${window.location.hostname}:3000` : '';
+      const API_BASE = '';
       const res = await fetch(`${API_BASE}/api/manual-entry`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -62,6 +67,8 @@ function App() {
           return [...prev, data.phone];
         });
         showToast(`✓ Saved: ${data.phone.model}`);
+        if (glassModel?.model === data.phone.model) setGlassModel(data.phone);
+        if (deviceModel?.model === data.phone.model) setDeviceModel(data.phone);
         setShowManualForm(false);
         setManualForm({
           model: '', brand: '', height_mm: '', width_mm: '', screen_size: '', resolution: '', screen_type: 'Flat', notch_type: 'Punch Hole', image_url: '', view360_url: ''
@@ -78,39 +85,29 @@ function App() {
   };
 
   useEffect(() => {
-    const loadPhones = async () => {
-      try {
-        console.log("[Init] Fetching phones from Supabase...");
-        const { data, error } = await supabase
-          .from('phones')
-          .select('*')
-          .order('model', { ascending: true });
-
-        if (error) throw error;
-
-        if (data && data.length > 0) {
-          setPhones(data);
-          console.log(`[Init] Supabase loaded ${data.length} phones successfully.`);
-        } else {
-          showToast(`Database connected, but 0 phones found! Check Supabase RLS policies.`, 'error');
-        }
-      } catch (err) {
-        console.error('Error loading from Supabase:', err);
-        showToast(`DB Error: ${err.message || "Failed to fetch from Supabase. Check env vars."}`, 'error');
-      }
-    };
-    loadPhones();
+    let active = true;
+    loadPhones(supabase).then(({ phones: loaded, offline }) => {
+      if (!active) return;
+      setPhones(loaded);
+      if (offline) setToast({ msg: 'Using bundled phone data. Online database unavailable or not configured.', type: 'error' });
+    }).catch(error => { if (active) setToast({ msg: error.message, type: 'error' }); });
+    return () => { active = false; };
   }, []);
 
   // Toast helper — auto-dismiss after 3s
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 5000);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
   };
 
   // History — last 5 checks, persisted to localStorage
   const [history, setHistory] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('glassCheckerHistory') || '[]'); }
+    try { const saved = JSON.parse(localStorage.getItem('glassCheckerHistory') || '[]'); return Array.isArray(saved) ? saved.filter(h => h?.glass?.model && h?.device?.model).slice(0, 5) : []; }
     catch { return []; }
   });
 
@@ -118,21 +115,31 @@ function App() {
     const entry = {
       glass: { model: glass.model, brand: glass.brand },
       device: { model: device.model, brand: device.brand },
+      glassType,
+      measurements: { ...measurements },
       status: result.compatibility_status,
       color: result.color_code,
       ts: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
     };
     setHistory(prev => {
       const next = [entry, ...prev.filter(h => !(h.glass.model === entry.glass.model && h.device.model === entry.device.model))].slice(0, 5);
-      localStorage.setItem('glassCheckerHistory', JSON.stringify(next));
+      try { localStorage.setItem('glassCheckerHistory', JSON.stringify(next)); } catch { /* History remains available in memory. */ }
       return next;
     });
   };
 
-  const copyResult = () => {
+  const copyResult = async () => {
     if (!result || !glassModel || !deviceModel) return;
-    const text = `Glass Compatibility Check\nGlass: ${glassModel.brand} ${glassModel.model}\nDevice: ${deviceModel.brand} ${deviceModel.model}\nResult: ${result.compatibility_status}\nHeight diff: ${result.height_difference} | Width diff: ${result.width_difference}\nReason: ${result.reason_message}`;
-    navigator.clipboard.writeText(text).then(() => showToast('✓ Result copied to clipboard!'));
+    const text = [
+      'Glass Compatibility Check', 'Glass source: ' + glassModel.model, 'Target: ' + deviceModel.model, 'Mode: ' + glassType,
+      'Physical glass (H × W): ' + formatMm(result.physical.height_mm) + ' × ' + formatMm(result.physical.width_mm),
+      'Thickness: ' + formatMm(result.physical.thickness_mm),
+      'Body clearance per edge (top/bottom, left/right): ' + formatMm(result.vertical_clearance) + ', ' + formatMm(result.horizontal_clearance),
+      'Glass minus display (H, W): ' + formatMm(result.display_height_margin) + ', ' + formatMm(result.display_width_margin),
+      'Result: ' + result.compatibility_status, result.reason_message,
+    ].join('\n');
+    try { await navigator.clipboard.writeText(text); showToast('Result copied to clipboard!'); }
+    catch { showToast('Clipboard unavailable. Select and copy the result text instead.', 'error'); }
   };
 
   // Derive unique sorted brand list from local DB
@@ -140,80 +147,24 @@ function App() {
   // Per-brand counts for stats
   const brandCounts = phones.reduce((acc, p) => { acc[p.brand] = (acc[p.brand] || 0) + 1; return acc; }, {});
 
-  const getBrandFamily = (brand) => {
-    if (!brand) return 'Unknown';
-    const b = brand.toLowerCase();
-    if (['oppo', 'vivo', 'realme', 'oneplus', 'iqoo'].includes(b)) return 'BBK';
-    if (b === 'apple') return 'Apple';
-    if (b === 'samsung') return 'Samsung';
-    if (b === 'motorola') return 'Motorola';
-    // Return capitalized brand for others
-    return brand.charAt(0).toUpperCase() + brand.slice(1);
-  };
-
-  // Helper: Confidence score (0–100)
-  const getConfidenceScore = (glass, device, result) => {
-    if (!glass || !device || !result) return null;
-    if (result.color_code === 'RED') return { score: 0, label: 'Not Compatible', color: 'text-red-400', bar: 'bg-red-500' };
-    let score = 100;
-    score -= Math.abs(result.hDiff) * 12;
-    score -= Math.abs(result.wDiff) * 12;
-    const sizeDiff = Math.abs((glass.screen_size || 0) - (device.screen_size || 0));
-    score -= sizeDiff * 18;
-    const dh = Math.abs((glass.display_height_mm || 0) - (device.display_height_mm || 0));
-    const dw = Math.abs((glass.display_width_mm || 0) - (device.display_width_mm || 0));
-    if (dh > 0) score -= dh * 8;
-    if (dw > 0) score -= dw * 8;
-    score = Math.max(0, Math.min(100, Math.round(score)));
-    if (score >= 88) return { score, label: 'Excellent Fit', color: 'text-teal-300', bar: 'bg-teal-400' };
-    if (score >= 70) return { score, label: 'Good Fit', color: 'text-green-300', bar: 'bg-green-400' };
-    if (score >= 50) return { score, label: 'Borderline — Verify Physically', color: 'text-yellow-300', bar: 'bg-yellow-400' };
-    return { score, label: 'Poor Fit', color: 'text-orange-400', bar: 'bg-orange-400' };
-  };
-
-  // Helper: In-display fingerprint warning
-  const getFingerprintWarning = (phone) => {
-    if (!phone) return null;
-    const brand = (phone.brand || '').toLowerCase();
-    const screen = (phone.screen_type || '').toLowerCase();
-    const isAmoled = screen.includes('amoled') || screen.includes('oled');
-    const isFpsRisk = ['oneplus', 'samsung', 'vivo', 'iqoo', 'realme', 'xiaomi', 'oppo'].includes(brand);
-    if (isAmoled && isFpsRisk) return '⚠️ In-display fingerprint sensor detected. Use glass ≤ 0.33mm. Thick glass may cause fingerprint unlock failure.';
-    return null;
-  };
-
-  // Helper: Failure mode warnings based on result
-  const getFailureWarnings = (glass, device, result, glassType) => {
-    if (!glass || !device || !result) return [];
-    const warnings = [];
-    if (glassType === 'Type B') {
-      if (result.hDiff < -1.0 && result.hDiff >= -3.0) warnings.push('⚠️ Corner lift risk — small gap between glass edge and device bezel may cause lifting over time.');
-      if (result.hDiff > 0.1 || result.wDiff > 0.1) warnings.push('❌ Glass overhangs device — black borders may leak and look misaligned.');
-      const isFpsDevice = getFingerprintWarning(device);
-      if (isFpsDevice) warnings.push('⚠️ Full-cover (Type B) glass is thicker — may reduce in-display fingerprint accuracy on AMOLED phones.');
-    }
-    if (glass.notch_type !== device.notch_type) warnings.push('❌ Camera cut mismatch — glass has wrong notch cut for this device. Risk of camera obstruction or dust entry.');
-    if ((glass.screen_type || '').toLowerCase().includes('curved') && (device.screen_type || '').toLowerCase().includes('flat'))
-      warnings.push('⚠️ Curved glass on flat screen — edges may not adhere fully, causing lift at corners.');
-    return warnings;
-  };
-
-
   const searchOnline = async (query, setModel, setQuery) => {
     if (!query) return;
     setLoading(true);
     try {
-      // Use window.location.hostname to support network access (e.g. phone testing)
-      const API_BASE = window.location.port === '5173' ? `http://${window.location.hostname}:3000` : '';
+      // Same-origin API works through Vite's development proxy and in production.
+      const API_BASE = '';
       const res = await fetch(`${API_BASE}/api/search?model=${encodeURIComponent(query)}`);
 
-      if (!res.ok) throw new Error('Not found');
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Online search failed');
+      }
       const newPhone = await res.json();
 
       // Update local state
       setPhones(prev => {
         const exists = prev.find(p => p.model === newPhone.model);
-        if (exists) return prev; // Don't add if already exists
+        if (exists) return prev.map(p => p.model === newPhone.model ? newPhone : p);
         return [...prev, newPhone];
       });
       setModel(newPhone);
@@ -223,202 +174,17 @@ function App() {
     } catch (err) {
       console.error(err);
       setLoading(false);
-      showToast('Phone model not found online.', 'error');
+      showToast(err.message || 'Online search failed.', 'error');
     }
   };
 
 
 
-  const getFilteredChildModels = () => {
-    if (!glassModel) return [];
-
-    const glassFamily = getBrandFamily(glassModel.brand);
-
-    return phones
-      .filter(p => p.model !== glassModel.model)
-      .filter(p => {
-        // Filter: Brand Family (BBK=BBK, Samsung=Samsung, etc.)
-        const pFamily = getBrandFamily(p.brand);
-        if (glassFamily === 'BBK') {
-          if (pFamily !== 'BBK') return false;
-        } else {
-          if (pFamily !== glassFamily) return false;
-        }
-
-        if (glassType === 'Type A') {
-          // Type A: Clear Logic (Updated)
-          if (p.screen_type !== glassModel.screen_type) return false;
-          if (p.notch_type !== glassModel.notch_type) return false;
-
-          const sizeDiff = Math.abs(glassModel.screen_size - p.screen_size);
-          if (sizeDiff > 0.80) return false;
-
-          // Display Dimensions Check (if available)
-          const gH = glassModel.display_height_mm || 0;
-          const pH = p.display_height_mm || 0;
-          const gW = glassModel.display_width_mm || 0;
-          const pW = p.display_width_mm || 0;
-
-          if (gH > 0 && pH > 0 && Math.abs(gH - pH) > 0.90) return false;
-          if (gW > 0 && pW > 0 && Math.abs(gW - pW) > 0.90) return false;
-
-          return true;
-        } else if (glassType === 'Type B') {
-          // Type B: Full Cover (Strict Safe Fit)
-          if (p.screen_type !== glassModel.screen_type) return false;
-          if (p.notch_type !== glassModel.notch_type) return false;
-
-          const hDiff = glassModel.height_mm - p.height_mm;
-          const wDiff = glassModel.width_mm - p.width_mm;
-          return hDiff <= 0.2 && wDiff <= 0.2 && hDiff >= -3.0 && wDiff >= -2.5;
-        } else {
-          // Type C: Exact Match Only (Handled by initial filter mostly, but safe to keep strict)
-          return p.model === glassModel.model;
-        }
-      })
-      .sort((a, b) => {
-        // Sort by Brand Family match first (Optional but good UX), then by fit
-        // Actually, let's just sort by Fit Quality (Sum of absolute diffs)
-        const aH = Math.abs(glassModel.height_mm - a.height_mm);
-        const aW = Math.abs(glassModel.width_mm - a.width_mm);
-
-        const bH = Math.abs(glassModel.height_mm - b.height_mm);
-        const bW = Math.abs(glassModel.width_mm - b.width_mm);
-
-        return (aH + aW) - (bH + bW);
-      });
-  };
-
-  const childModels = getFilteredChildModels();
+  const childModels = glassModel ? phones.filter(p => evaluateCompatibility(glassModel, p, glassType, measurements).isCompatible) : [];
 
   const checkCompatibility = () => {
     if (!glassModel || !deviceModel) return;
-
-    let status = "COMPATIBLE";
-    let colorCode = "GREEN";
-    let reason = "";
-
-    // Diff calculation
-    const hDiffVal = parseFloat((glassModel.height_mm - deviceModel.height_mm).toFixed(2));
-    const wDiffVal = parseFloat((glassModel.width_mm - deviceModel.width_mm).toFixed(2));
-    const hDiffStr = (hDiffVal > 0 ? "+" : "") + hDiffVal + "mm";
-    const wDiffStr = (wDiffVal > 0 ? "+" : "") + wDiffVal + "mm";
-
-    // --- LOGIC ENGINE SWITCH ---
-    if (glassType === 'Type C') {
-      // TYPE C: Hot Bending (Exact Match Only)
-      if (glassModel.model.toLowerCase() !== deviceModel.model.toLowerCase()) {
-        status = "NOT COMPATIBLE";
-        colorCode = "RED";
-        reason = "Type C (Hot Bending) requires an EXACT Model Name match due to specific curve variance.";
-      } else {
-        status = "PERFECT FIT";
-        colorCode = "TEAL";
-        reason = "Exact Match verified for Hot Bending Glass.";
-      }
-    }
-    else if (glassType === 'Type B') {
-      // TYPE B: Full Cover (Strict Bezel Match)
-
-      // 1. Check Screen/Notch Type
-      if (glassModel.screen_type !== deviceModel.screen_type || glassModel.notch_type !== deviceModel.notch_type) {
-        status = "NOT COMPATIBLE";
-        colorCode = "RED";
-        reason = `Type Mismatch (Screen/Camera) not allowed for Full Cover.`;
-      }
-      // 2. Strict Dimensions (Current Algo 2.0)
-      else if (hDiffVal > 0.2 || wDiffVal > 0.2) {
-        status = "NOT COMPATIBLE";
-        colorCode = "RED";
-        reason = `Glass Overhangs Device (>0.2mm). Black borders will leak.`;
-      }
-      else if (hDiffVal < -3.0 || wDiffVal < -2.5) {
-        status = "NOT COMPATIBLE";
-        colorCode = "RED";
-        reason = `Glass Too Small. Black borders will block screen.`;
-      }
-      else {
-        // 3. Name Mismatch Warning
-        if (glassModel.model.toLowerCase() !== deviceModel.model.toLowerCase()) {
-          status = "CAUTION: CHECK BEZELS";
-          colorCode = "YELLOW";
-          reason = "Dimensions fit, but Model Names differ. Ensure black borders don't cover the screen (Newer phones have thinner bezels).";
-        } else {
-          status = "PERFECT FIT";
-          colorCode = "TEAL";
-          reason = "Exact Model Match. Full Cover fits perfectly.";
-        }
-      }
-    }
-    else {
-      // TYPE A: Clear (Logic Update 4.0 - User Request)
-      // Requirements:
-      // 1. Screen Type = Match
-      // 2. Notch Type = Match
-      // 3. Screen Size Diff <= 0.80"
-      // 4. Display Width Diff <= 0.90mm
-      // 5. Display Height Diff <= 0.90mm
-
-      const sizeDiff = Math.abs(glassModel.screen_size - deviceModel.screen_size);
-
-      // Calculate Display Dimension Diffs (if available)
-      const glassH = glassModel.display_height_mm || 0;
-      const deviceH = deviceModel.display_height_mm || 0;
-      const glassW = glassModel.display_width_mm || 0;
-      const deviceW = deviceModel.display_width_mm || 0;
-
-      const displayHDiff = Math.abs(glassH - deviceH);
-      const displayWDiff = Math.abs(glassW - deviceW);
-
-      if (glassModel.screen_type !== deviceModel.screen_type) {
-        status = "NOT COMPATIBLE";
-        colorCode = "RED";
-        reason = `Screen Type Mismatch (${glassModel.screen_type} vs ${deviceModel.screen_type}).`;
-      }
-      else if (glassModel.notch_type !== deviceModel.notch_type) {
-        status = "NOT COMPATIBLE";
-        colorCode = "RED";
-        reason = `Notch Mismatch (${glassModel.notch_type} vs ${deviceModel.notch_type}).`;
-      }
-      else if (sizeDiff > 0.80) {
-        status = "NOT COMPATIBLE";
-        colorCode = "RED";
-        reason = `Screen Size Mismatch (> 0.80"). (${glassModel.screen_size}" vs ${deviceModel.screen_size}").`;
-      }
-      else if (glassH > 0 && deviceH > 0 && displayHDiff > 0.90) {
-        status = "NOT COMPATIBLE";
-        colorCode = "RED";
-        reason = `Display Height Mismatch (> 0.90mm) [Diff: ${displayHDiff.toFixed(2)}mm].`;
-      }
-      else if (glassW > 0 && deviceW > 0 && displayWDiff > 0.90) {
-        status = "NOT COMPATIBLE";
-        colorCode = "RED";
-        reason = `Display Width Mismatch (> 0.90mm) [Diff: ${displayWDiff.toFixed(2)}mm].`;
-      }
-      else {
-        status = "COMPATIBLE";
-        colorCode = "GREEN";
-        reason = "Type A Glass fits! Matches Screen/Notch types and is within new size/display tolerances (0.8\" / 0.9mm).";
-      }
-    }
-
-    const colorMap = {
-      "GREEN": "bg-green-600",
-      "TEAL": "bg-teal-500",
-      "YELLOW": "bg-yellow-500",
-      "RED": "bg-red-500"
-    };
-
-    const resultObj = {
-      compatibility_status: status,
-      color_code: colorCode,
-      colorClass: colorMap[colorCode],
-      height_difference: hDiffStr,
-      width_difference: wDiffStr,
-      reason_message: reason,
-      hDiff: hDiffVal,
-      wDiff: wDiffVal,
-    };
+    const resultObj = evaluateCompatibility(glassModel, deviceModel, glassType, measurements);
     setResult(resultObj);
     saveToHistory(glassModel, deviceModel, resultObj);
   };
@@ -597,24 +363,32 @@ function App() {
             )}
           </div>
 
+          <fieldset className="mt-2 rounded-xl border border-purple-500/30 bg-slate-900/50 p-4">
+            <legend className="px-2 text-sm font-semibold text-purple-200">Physical tempered glass measurements</legend>
+            <p className="mb-3 text-xs text-slate-400">Measure the actual protector edge to edge in portrait orientation. Height and width are needed for a dimension check; thickness is optional. Saved with recent checks on this browser.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[['height_mm', 'Height (mm)', '155.50'], ['width_mm', 'Width (mm)', '71.00'], ['thickness_mm', 'Thickness (mm)', '0.33']].map(([key, label, placeholder]) => (
+                <label key={key} className="text-xs text-slate-300">{label}
+                  <input type="number" min="0.01" step="0.01" inputMode="decimal" placeholder={placeholder}
+                    value={measurements[key]} onChange={e => { setMeasurements(prev => ({ ...prev, [key]: e.target.value })); setResult(null); }}
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-slate-800 p-2.5 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
           {/* Child Models (Compatible List) */}
           {
             glassModel && (
               <div className="mt-4 p-4 bg-purple-500/5 rounded-xl border border-purple-500/10 flex-1 flex flex-col">
                 <h3 className="text-purple-300 font-bold mb-3 text-xs uppercase tracking-wide flex items-center gap-2">
-                  <span>✨</span> Compatible Devices ({getBrandFamily(glassModel.brand)})
+                  <span>✨</span> Devices passing dimension checks
                 </h3>
 
                 <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
                   {childModels.length > 0 ? (
                     childModels.map(p => {
-                      const hDiff = glassModel.height_mm - p.height_mm;
-                      const wDiff = glassModel.width_mm - p.width_mm;
-                      const isPerfect = Math.abs(hDiff) <= 0.5 && Math.abs(wDiff) <= 0.5;
-                      const activeClass = isPerfect
-                        ? 'bg-teal-500/20 text-teal-200 border-teal-500/30'
-                        : 'bg-slate-800 text-slate-300 border-white/5';
-
+                      const activeClass = 'bg-slate-800 text-slate-300 border-white/5';
                       return (
                         <button
                           key={p.model}
@@ -622,12 +396,12 @@ function App() {
                           onClick={() => setDeviceModel(p)}
                           title={`Click to select as Device`}
                         >
-                          {p.model} {isPerfect && '★'}
+                          {p.model}
                         </button>
                       );
                     })
                   ) : (
-                    <span className="text-slate-500 italic text-xs">No known compatible models found based on current rules.</span>
+                    <span className="text-slate-500 italic text-xs">Enter physical measurements to find dimension matches. Full-cover and curved glass require a physical check.</span>
                   )}
                 </div>
               </div>
@@ -871,18 +645,14 @@ function App() {
       {/* RESULT CARD */}
       {
         result && (
-          <div className={`mt-8 sm:mt-12 w-full rounded-3xl overflow-hidden shadow-2xl animate-fade-in relative group ${result.isCompatible ? 'shadow-green-500/30' : 'shadow-red-500/30'}`}>
-            <div className={`absolute inset-0 opacity-40 ${result.isCompatible ? 'bg-gradient-to-br from-green-700 via-teal-900 to-slate-900' : 'bg-gradient-to-br from-red-700 via-rose-900 to-slate-900'}`}></div>
-            <div className="absolute inset-0 backdrop-blur-3xl"></div>
-
-            <div className={`relative p-8 border rounded-3xl ${result.isCompatible ? 'border-green-500/30' : 'border-red-500/30'}`}>
-
+          <div className="mt-8 sm:mt-12 w-full rounded-3xl overflow-hidden shadow-2xl animate-fade-in bg-slate-900/80 border border-white/10" role="status">
+            <div className="relative p-4 sm:p-8">
               {/* Header Status */}
               <div className="text-center mb-8">
-                <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-4 border ${result.isCompatible ? 'bg-green-500/20 text-green-300 border-green-500/30' : 'bg-red-500/20 text-red-300 border-red-500/30'}`}>
+                <div className={`inline-flex px-4 py-1.5 rounded-full text-xs font-bold text-white mb-4 ${result.colorClass}`}>
                   <span>{glassType} Evaluation</span>
                 </div>
-                <h2 className={`text-4xl md:text-5xl font-black uppercase tracking-tight mb-4 drop-shadow-lg ${result.isCompatible ? 'text-transparent bg-clip-text bg-gradient-to-r from-green-300 to-teal-200' : 'text-transparent bg-clip-text bg-gradient-to-r from-red-300 to-pink-200'}`}>
+                <h2 className={`text-2xl sm:text-4xl font-black mb-4 ${result.color_code === 'RED' ? 'text-red-300' : result.color_code === 'YELLOW' ? 'text-yellow-300' : 'text-green-300'}`}>
                   {result.compatibility_status}
                 </h2>
                 <p className="text-lg text-slate-200 font-light italic max-w-2xl mx-auto leading-relaxed opacity-90">
@@ -890,21 +660,20 @@ function App() {
                 </p>
               </div>
 
-              {/* Confidence Score Bar */}
-              {(() => {
-                const conf = getConfidenceScore(glassModel, deviceModel, result);
-                return conf ? (
-                  <div className="mb-6 bg-black/20 rounded-2xl p-4 border border-white/5">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Fit Confidence</p>
-                      <span className={`text-xs font-bold ${conf.color}`}>{conf.score}% — {conf.label}</span>
-                    </div>
-                    <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                      <div className={`h-2 rounded-full transition-all duration-700 ${conf.bar}`} style={{ width: `${conf.score}%` }}></div>
-                    </div>
-                  </div>
-                ) : null;
-              })()}
+              <div className="mb-6 rounded-2xl bg-black/20 p-4 border border-white/10">
+                <h3 className="font-semibold text-white mb-3">Physical measurement result</h3>
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-slate-300">
+                  {[
+                    ['Glass height × width', formatMm(result.physical.height_mm) + ' × ' + formatMm(result.physical.width_mm)],
+                    ['Glass thickness (recorded only)', formatMm(result.physical.thickness_mm)],
+                    ['Top / bottom body clearance per edge', formatMm(result.vertical_clearance)],
+                    ['Left / right body clearance per edge', formatMm(result.horizontal_clearance)],
+                    ['Glass minus display height (total)', formatMm(result.display_height_margin)],
+                    ['Glass minus display width (total)', formatMm(result.display_width_margin)],
+                  ].map(([label, value]) => <div key={label}><dt className="text-xs text-slate-400">{label}</dt><dd className="mt-1 font-semibold">{value}</dd></div>)}
+                </dl>
+                <p className="mt-3 text-xs text-slate-400">Clearance assumes centred placement against the outer phone body. Negative clearance means overhang; a negative display margin means incomplete coverage. Display dimensions may be estimates. Thickness alone cannot confirm touch or fingerprint performance.</p>
+              </div>
 
               {/* Data Table */}
               <div className="bg-slate-900/40 rounded-2xl border border-white/5 overflow-hidden">
@@ -913,7 +682,7 @@ function App() {
                     <thead className="bg-white/5 text-xs text-slate-400 uppercase tracking-wider">
                       <tr>
                         <th className="px-6 py-4 font-semibold">Specification</th>
-                        <th className="px-6 py-4 font-semibold text-purple-300">Glass Model</th>
+                        <th className="px-6 py-4 font-semibold text-purple-300">Source Phone</th>
                         <th className="px-6 py-4 font-semibold text-blue-300">Device Model</th>
                         <th className="px-6 py-4 font-semibold text-right">Difference</th>
                       </tr>
@@ -923,16 +692,16 @@ function App() {
                         <td className="px-6 py-4 font-medium text-white">Body Height</td>
                         <td className="px-6 py-4">{glassModel.height_mm}mm</td>
                         <td className="px-6 py-4">{deviceModel.height_mm}mm</td>
-                        <td className={`px-6 py-4 text-right font-bold ${Math.abs(result.hDiff) > 1.0 ? 'text-red-400' : 'text-green-400'}`}>
-                          {result.height_difference}
+                        <td className="px-6 py-4 text-right text-slate-400">
+                          {formatMm(positiveNumber(glassModel.height_mm) && positiveNumber(deviceModel.height_mm) ? Number(glassModel.height_mm) - Number(deviceModel.height_mm) : null)}
                         </td>
                       </tr>
                       <tr className="hover:bg-white/5 transition-colors">
                         <td className="px-6 py-4 font-medium text-white">Body Width</td>
                         <td className="px-6 py-4">{glassModel.width_mm}mm</td>
                         <td className="px-6 py-4">{deviceModel.width_mm}mm</td>
-                        <td className={`px-6 py-4 text-right font-bold ${Math.abs(result.wDiff) > 1.0 ? 'text-red-400' : 'text-green-400'}`}>
-                          {result.width_difference}
+                        <td className="px-6 py-4 text-right text-slate-400">
+                          {formatMm(positiveNumber(glassModel.width_mm) && positiveNumber(deviceModel.width_mm) ? Number(glassModel.width_mm) - Number(deviceModel.width_mm) : null)}
                         </td>
                       </tr>
 
@@ -988,52 +757,6 @@ function App() {
 
 
 
-                {/* In-Display FPS Warning */}
-                {getFingerprintWarning(deviceModel) && (
-                  <div className="mt-3 p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl flex gap-3 items-start">
-                    <span className="text-xl shrink-0">👆</span>
-                    <p className="text-xs text-orange-200 leading-relaxed">{getFingerprintWarning(deviceModel)}</p>
-                  </div>
-                )}
-
-                {/* BBK Family Note */}
-                {result.color_code !== 'RED' && getBrandFamily(glassModel.brand) === 'BBK' && getBrandFamily(deviceModel.brand) === 'BBK' && glassModel.brand !== deviceModel.brand && (
-                  <div className="mt-3 p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl flex gap-3 items-start">
-                    <span className="text-xl shrink-0">⭐</span>
-                    <p className="text-xs text-purple-200 leading-relaxed">
-                      <span className="font-bold">BBK Family Cross-Match</span> — {glassModel.brand} and {deviceModel.brand} are both BBK family brands (OPPO/Vivo/Realme/OnePlus/iQOO) and often share identical display dimensions. This is a commonly successful cross-brand fit.
-                    </p>
-                  </div>
-                )}
-
-                {/* Case-Friendly Note */}
-                {result.color_code !== 'RED' && (
-                  <div className="mt-3 p-3 bg-white/5 border border-white/5 rounded-xl flex gap-3 items-start">
-                    <span className="text-base shrink-0">{glassType === 'Type B' ? '⚠️' : '✅'}</span>
-                    <p className="text-xs text-slate-400 leading-relaxed">
-                      {glassType === 'Type B'
-                        ? 'Full-cover (Type B) glass has black borders — may conflict with thick cases. Test case fit after installing.'
-                        : 'Clear (Type A) glass is usually case-friendly — no black borders to conflict with case edges.'}
-                    </p>
-                  </div>
-                )}
-
-                {/* Failure Mode Warnings */}
-                {(() => {
-                  const warns = getFailureWarnings(glassModel, deviceModel, result, glassType);
-                  return warns.length > 0 ? (
-                    <div className="mt-4 space-y-2">
-                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">⚠️ Risk Factors</p>
-                      {warns.map((w, i) => (
-                        <div key={i} className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
-                          <p className="text-xs text-red-300 leading-relaxed">{w}</p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : null;
-                })()}
-
-
                 {/* Copy Result + New Check */}
                 <div className="mt-6 flex justify-center gap-3">
                   <button onClick={copyResult} className="flex items-center gap-2 px-6 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-semibold text-white border border-white/10 transition-all">
@@ -1055,7 +778,7 @@ function App() {
           <div className="mt-8 bg-white/5 backdrop-blur-md rounded-2xl p-5 border border-white/10 shadow-xl">
             <div className="flex items-center justify-between mb-4">
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">🗓️ Recent Checks</p>
-              <button onClick={() => { setHistory([]); localStorage.removeItem('glassCheckerHistory'); }} className="text-[10px] text-slate-600 hover:text-red-400 transition-colors">Clear</button>
+              <button onClick={() => { setHistory([]); try { localStorage.removeItem('glassCheckerHistory'); } catch { /* Storage may be unavailable. */ } }} className="text-[10px] text-slate-600 hover:text-red-400 transition-colors">Clear</button>
             </div>
             <div className="space-y-2">
               {history.map((h, i) => {
@@ -1065,7 +788,12 @@ function App() {
                     onClick={() => {
                       const g = phones.find(p => p.model === h.glass.model);
                       const d = phones.find(p => p.model === h.device.model);
-                      if (g && d) { setGlassModel(g); setDeviceModel(d); setResult(null); }
+                      if (g && d) {
+                        setGlassModel(g); setDeviceModel(d);
+                        setGlassType(h.glassType || 'Type A');
+                        setMeasurements({ ...emptyMeasurements(), ...h.measurements });
+                        setResult(null);
+                      }
                     }}
                   >
                     <div className="flex-1 min-w-0">
@@ -1301,18 +1029,6 @@ function App() {
                   <option value="No Notch">No Notch</option>
                 </select>
               </div>
-            </div>
-
-            {/* Glass Thickness */}
-            <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">Glass Thickness <span className="text-slate-600">(select if known)</span></label>
-              <select name="glass_thickness" value={manualForm.glass_thickness || ''} onChange={handleManualChange} className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none">
-                <option value="">Unknown</option>
-                <option value="0.2">0.2mm — Ultra-thin</option>
-                <option value="0.3">0.3mm — Standard</option>
-                <option value="0.33">0.33mm — Most common</option>
-                <option value="0.4">0.4mm — Thick (may block FPS)</option>
-              </select>
             </div>
 
             {/* Submit + Cancel */}

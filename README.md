@@ -1,161 +1,65 @@
-<h1 align="center">
-  🔍 Glass Finder
-</h1>
+# Glass Finder
 
-<p align="center">
-  <b>Tempered Glass Compatibility Checker</b><br/>
-  Instantly find which tempered glass fits your phone — powered by a live GSMArena database.
-</p>
+React application for comparing a physical tempered-glass protector with a target phone. Includes model search, manual phone editing, online lookup, recent checks and a copyable result.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=white" />
-  <img src="https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white" />
-  <img src="https://img.shields.io/badge/TailwindCSS-3-38BDF8?style=for-the-badge&logo=tailwindcss&logoColor=white" />
-  <img src="https://img.shields.io/badge/Node.js-Express-339933?style=for-the-badge&logo=node.js&logoColor=white" />
-  <img src="https://img.shields.io/badge/Scraper-GSMArena-1E90FF?style=for-the-badge" />
-</p>
+## Run locally
 
----
+Use Node.js 22+ and npm:
 
-## ✨ Features
-
-| Feature | Description |
-|---|---|
-| 🏷️ **Brand Filter** | Filter the entire local DB by brand with one click, with model counts shown |
-| 🔍 **Smart Search** | Inline expanding results with phone image, brand pill, screen size & type |
-| 🌐 **Online Scrape** | Fetch any phone from GSMArena live and add it to the local database |
-| ✅ **3 Check Modes** | Type A (Clear), Type B (Full Cover), Type C (UV Hot-Bend) compatibility logic |
-| 📋 **Copy Result** | Copy the full compatibility report to clipboard in one click |
-| 🔄 **New Check** | Reset everything instantly |
-| 🗓️ **Recent History** | Last 5 checks saved to `localStorage` with color-coded results, click to restore |
-| 🔄 **360° View** | View the device in 360° via 91mobiles iframe (if available) |
-| 🔎 **Zoom Modal** | Side-by-side full-size image comparison of glass vs device |
-| ✏️ **Manual Entry** | Add or edit any phone model directly in the UI |
-| 🔢 **Live DB Stats** | Phone count shown in header; per-brand counts in filter chips |
-| 🔔 **Toast Alerts** | Non-blocking green/red notifications instead of `alert()` popups |
-
----
-
-## 📸 App Preview
-
-> **Glass Finder** — Dark glassmorphism UI with purple/blue accent palette
-
-```
-┌─────────────────────────────────────────────┐
-│           🔍  Glass Finder                  │
-│     Tempered Glass Compatibility Checker    │
-│           📱 5585 models in local DB        │
-│                                             │
-│  Filter by Brand                            │
-│  [ All 5585 ] [ Samsung 340 ] [ vivo 210 ]  │
-│  [ Realme 195 ] [ Xiaomi 180 ] ...          │
-│                                             │
-│  ┌─ Step 1: Select Glass ────────────────┐  │
-│  │  [Type A] [Type B] [Type C]           │  │
-│  │  🔍 Samsung Galaxy S24...             │  │
-│  │  ┌──────────────────────────────┐     │  │
-│  │  │ 📱 Galaxy S24     Samsung    │     │  │
-│  │  │    6.2" • Flat • Punch Hole  │     │  │
-│  │  └──────────────────────────────┘     │  │
-│  └───────────────────────────────────────┘  │
-│                                             │
-│  ┌─ Step 2: Target Device ───────────────┐  │
-│  │  🔍 Galaxy A55...                     │  │
-│  └───────────────────────────────────────┘  │
-│                                             │
-│  ████████ CHECK COMPATIBILITY ████████      │
-│                                             │
-│  ✅ COMPATIBLE                              │
-│  ┌────────────┬────────┬────────┬───────┐  │
-│  │ Spec       │ Glass  │ Device │  Diff │  │
-│  ├────────────┼────────┼────────┼───────┤  │
-│  │ Body H     │ 147mm  │ 161mm  │ -14mm │  │
-│  │ Screen     │ 6.2"   │ 6.2"   │ 0.00" │  │
-│  └────────────┴────────┴────────┴───────┘  │
-│  [ 📋 Copy Result ]  [ 🔄 New Check ]       │
-└─────────────────────────────────────────────┘
-```
-
----
-
-## 🧠 Compatibility Logic
-
-### Type A — Clear Glass
-Matches on: **Screen type**, **Notch type**, **Screen size** (±0.80"), **Display height** (±0.90mm), **Display width** (±0.90mm)
-
-### Type B — Full Cover
-Strict bezel matching: Glass must not overhang device by >0.2mm. Black borders are checked.
-
-### Type C — UV Hot-Bend / Curved
-**Exact model name match** required due to per-device curve variance.
-
----
-
-## 🏗️ Tech Stack
-
-| Layer | Tech |
-|---|---|
-| Frontend | React 18, Vite 7, Tailwind CSS 3 |
-| Backend | Node.js, Express, Axios, Cheerio |
-| Data Source | GSMArena (live scraper + local `phones.json`) |
-| Storage | `phones.json` (local DB) + `localStorage` (history) |
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Node.js 18+
-- npm
-
-### Installation
-
-```bash
-# Clone the repo
-git clone https://github.com/pethupraveen72/tempered-glass-checker.git
-cd tempered-glass-checker
-
-# Install dependencies
-npm install
-
-# Start both frontend (Vite) and backend (Express) together
+```sh
+npm ci
 npm run dev
 ```
 
-The app will be available at:
-- **Frontend:** `http://localhost:5173`
-- **Backend API:** `http://localhost:3000`
+The frontend runs at http://localhost:5173 and the API at http://localhost:3000. Vite proxies `/api` requests, including when its port changes. On Windows PowerShell, use `npm.cmd` if execution policy blocks `npm.ps1`. `start_server.bat` runs from its own project directory.
 
-> Access from any device on your network at `http://<your-ip>:5173`
+Phone browsing and compatibility checks work without database configuration using `public/phones.json`. The displayed model count reflects the data actually loaded.
 
----
+For online database reads, manual saving and online lookup, configure a local `.env` file (do not commit credentials):
 
-## 📡 API Endpoints
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/search?model=<name>` | Scrape GSMArena for a phone and save to DB |
-| `POST` | `/api/manual-entry` | Add / update a phone manually |
-| `GET` | `/api/health` | Server health check |
-
----
-
-## 📁 Project Structure
-
-```
-tempered-glass-checker/
-├── src/
-│   ├── App.jsx          # Main React component (UI, state, logic)
-│   └── index.css        # Global styles + animations
-├── public/
-│   └── phones.json      # Local phone database (5500+ models)
-├── server.js            # Express backend (scraper + API)
-├── package.json
-└── vite.config.js
+```dotenv
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-public-anon-key
+VITE_CLOUDFLARE_WORKER_URL=https://your-proxy.example
 ```
 
----
+The Supabase `phones` table must exist and permit the intended reads/writes through its policies. The frontend uses the public anon key; do not put a service-role key in a `VITE_` variable. The Worker URL is required for uncached online lookups. Unavailable API configuration returns an explanatory error. Database loading is paginated and falls back to bundled data on failure or an empty catalogue.
 
-## 📜 License
+## Physical tempered-glass measurements
 
-MIT © [Pethupraveen](https://github.com/pethupraveen72)
+1. Choose the protector's source phone model and glass type.
+2. Enter the actual protector's height and width in **millimetres**, measured edge to edge in portrait orientation. Optionally enter its thickness.
+3. Choose the target device and click **Check Compatibility**.
+
+The final result includes the glass height, width and thickness, body clearance per edge assuming centred placement, and glass size minus display size. Negative body clearance indicates overhang; negative display margin indicates incomplete coverage. Phone body specifications are shown separately as reference data and are never substituted for physical glass measurements.
+
+Measurements belong to each check, because protectors for the same phone can vary. Recent checks save the glass type and measurements in this browser's local storage. Selecting a new glass source clears measurements; changing any comparison input clears the previous result. Copy Result includes the measurement summary. Thickness is recorded only and does not establish fingerprint or touch compatibility.
+
+## Compatibility rules and limits
+
+All modes check measured glass against the target's body and rectangular display area. Missing or invalid data produces **Needs verification**, never a positive fit claim. Overhang, incomplete display coverage and known shape/camera mismatches produce **Not compatible**.
+
+- **Type A (clear):** Also compares source and target screen shape, notch type, diagonal (within 0.80 inches), and display height/width (within 0.90 mm). Complete flat-screen comparisons can produce **Dimensions fit**. These comparison tolerances are application heuristics, not manufacturer certification.
+- **Type B (full cover):** Passing outer dimensions still requires physical verification of the transparent opening, black borders, camera position and case clearance.
+- **Type C (curved):** Requires the same brand and exact model; matching dimensions still requires physical verification of the curve and adhesive.
+
+Display dimensions may be estimates calculated from diagonal and resolution. Measurements alone cannot verify rounded corners, precise cutout positions, usable flat surface, black-border openings or case fit. The app does not assign a statistical fit-confidence percentage.
+
+## Verification and production
+
+```sh
+npm test
+npm run lint
+npm run build
+npm start
+```
+
+Tests cover physical fit checks, invalid and missing data, decimal tolerance boundaries, catalogue pagination/fallback and API input validation. `npm start` serves the built frontend and API on `PORT` (default 3000). Vercel uses the handlers in `api/`; Docker uses `server.js`. Set frontend environment variables before building when using a configured Supabase frontend.
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /api/health` | API health |
+| `GET /api/search?model=...` | Cached lookup or online scrape |
+| `POST /api/manual-entry` | Validate and save phone specifications |
+
+Main files: `src/App.jsx` (interface), `src/compatibility.js` (measurement checks), `src/loadPhones.js` (catalogue loading), `api/` (database/search handlers), `server.js` (local and production HTTP server), and `tests/` (regression tests).

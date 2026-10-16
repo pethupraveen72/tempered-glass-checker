@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host",
+    "dev": "concurrently -k \"node --watch server.js\" \"vite --host\"",
+    "start": "node server.js",
+    "test": "node --test tests/*.test.js",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"

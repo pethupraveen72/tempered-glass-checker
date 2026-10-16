@@ -33,7 +33,7 @@ async function migrateData() {
 
         console.log('Uploading ' + formattedPhones.length + ' phones to Supabase...');
 
-        const { data, error } = await supabase
+        const { error } = await supabase
             .from('phones')
             .upsert(formattedPhones, { onConflict: 'model' });
 

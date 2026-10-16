@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 // Initialize Supabase (Vercel injected environment variables)
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 // Helper: Fetch phones index from GSMArena
 async function fetchGSMArenaIndex() {
@@ -21,7 +21,7 @@ async function fetchGSMArenaIndex() {
     try {
         // Try direct JSON parse first (current format)
         return JSON.parse(text);
-    } catch (e) {
+    } catch {
         // Fallback to regex if they switch back to the old JS variable format
         const match = text.match(/var\s+gsmd\s*=\s*(\[.*?\]);/s);
         if (match) return JSON.parse(match[1]);
@@ -118,7 +118,6 @@ async function fetchSmartprixNotchType(fullName, cfWorkerUrl) {
 
 async function detectNotchType($prod, brand, fullName) {
     const fn = fullName.toLowerCase();
-    const b = (brand || '').toLowerCase();
 
     // 1. Known Models
     if (fn.includes('iphone 14 pro') || fn.includes('iphone 15') || fn.includes('iphone 16')) return 'Dynamic Island';
@@ -139,18 +138,16 @@ async function detectNotchType($prod, brand, fullName) {
 }
 
 export default async function handler(req, res) {
-    const { model, force } = req.query;
-
-    if (!model) {
-        return res.status(400).json({ error: 'Model query parameter is required' });
-    }
-
     // CORS Headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
     }
+    if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+    const { model, force } = req.query;
+    if (typeof model !== 'string' || !model.trim()) return res.status(400).json({ error: 'Model query parameter is required' });
+    if (!supabase) return res.status(503).json({ error: 'Online database is not configured' });
 
     console.log(`[Search-API] Processing request for: ${model}`);
 

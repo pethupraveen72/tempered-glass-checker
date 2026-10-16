@@ -50,10 +50,86 @@
 }
 
 @layer base {
+  html {
+    color-scheme: dark;
+    scrollbar-gutter: stable;
+  }
+
   body {
     @apply bg-slate-900 text-white min-h-screen selection:bg-purple-500 selection:text-white;
     background: linear-gradient(135deg, #0f172a 0%, #312e81 50%, #0f172a 100%);
     background-attachment: fixed;
     font-family: 'Inter', system-ui, sans-serif;
+    margin: 0;
+    min-width: 320px;
+  }
+
+  button, input, select, textarea {
+    font: inherit;
+  }
+
+  button:not(:disabled), a {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button:not(:disabled) { cursor: pointer; }
+
+  :focus-visible {
+    outline: 2px solid #c4b5fd;
+    outline-offset: 3px;
+  }
+
+  input, select, textarea { min-width: 0; }
+
+  @media (max-width: 639px) {
+    input, select, textarea { font-size: 16px; }
+  }
+}
+
+.app-shell { padding-bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px)); }
+.pb-safe { padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px)); }
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgb(2 6 23 / 80%);
+  backdrop-filter: blur(8px);
+}
+
+.modal-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 40rem;
+  max-height: calc(100dvh - 2rem);
+  border: 1px solid rgb(255 255 255 / 15%);
+  border-radius: 1.25rem;
+  background: #0f172a;
+  box-shadow: 0 24px 80px rgb(0 0 0 / 50%);
+}
+
+.modal-panel-wide { max-width: 68rem; }
+.modal-panel > header { flex-shrink: 0; }
+.modal-body { overflow-y: auto; overscroll-behavior: contain; min-height: 0; }
+
+@media (max-width: 639px) {
+  .modal-backdrop { align-items: flex-end; padding: 0; }
+  .modal-panel {
+    max-height: calc(100dvh - 1rem);
+    border-radius: 1.25rem 1.25rem 0 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

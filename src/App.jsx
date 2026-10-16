@@ -6,12 +6,28 @@ import Modal from './components/Modal';
 import PhoneImage from './components/PhoneImage';
 import SpecTable from './components/SpecTable';
 import FitVisual from './components/FitVisual';
+import { glassMeasurementKey, readGlassMeasurements, writeGlassMeasurements } from './glassMeasurements';
 
 function App() {
   const [phones, setPhones] = useState([]);
   const [glassModel, updateGlassModel] = useState(null);
   const [measurements, setMeasurements] = useState(emptyMeasurements);
-  const setGlassModel = phone => { updateGlassModel(phone); setMeasurements(emptyMeasurements()); setResult(null); };
+  const [savedMeasurements, setSavedMeasurements] = useState(readGlassMeasurements);
+  const [measurementSaveFailed, setMeasurementSaveFailed] = useState(false);
+  const setGlassModel = phone => {
+    updateGlassModel(phone);
+    setMeasurements({ ...emptyMeasurements(), ...savedMeasurements[glassMeasurementKey(phone)] });
+    setResult(null);
+  };
+  const saveMeasurements = (next, phone = glassModel) => {
+    setMeasurements(next);
+    setResult(null);
+    const key = glassMeasurementKey(phone);
+    if (!key) return;
+    const saved = { ...savedMeasurements, [key]: next };
+    setSavedMeasurements(saved);
+    setMeasurementSaveFailed(!writeGlassMeasurements(saved));
+  };
   const [deviceModel, updateDeviceModel] = useState(null);
   const setDeviceModel = phone => { updateDeviceModel(phone); setResult(null); };
   const [glassQuery, setGlassQuery] = useState('');
@@ -377,16 +393,20 @@ function App() {
 
           <fieldset className="mt-2 min-w-0 rounded-xl border border-purple-500/30 bg-slate-900/50 p-4">
             <legend className="px-2 text-sm font-semibold text-purple-200">Physical tempered glass measurements</legend>
-            <p className="mb-3 text-xs text-slate-400">Measure the actual protector edge to edge in portrait orientation. Height and width are needed for a dimension check; thickness is optional. Saved with recent checks on this browser.</p>
+            <p className="mb-3 text-xs text-slate-400">Measure the actual protector edge to edge in portrait orientation. Height and width are needed for a dimension check; thickness is optional. Measurements are saved automatically for each source model on this browser.</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[['height_mm', 'Height (mm)', '155.50'], ['width_mm', 'Width (mm)', '71.00'], ['thickness_mm', 'Thickness (mm)', '0.33']].map(([key, label, placeholder]) => (
                 <label key={key} className="text-xs text-slate-300">{label}
                   <input type="number" min="0.01" step="0.01" inputMode="decimal" placeholder={placeholder}
-                    value={measurements[key]} onChange={e => { setMeasurements(prev => ({ ...prev, [key]: e.target.value })); setResult(null); }}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-slate-800 p-2.5 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                    disabled={!glassModel}
+                    value={measurements[key]} onChange={e => saveMeasurements({ ...measurements, [key]: e.target.value })}
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-slate-800 p-2.5 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50" />
                 </label>
               ))}
             </div>
+            <p className={`mt-3 text-xs ${measurementSaveFailed ? 'text-amber-300' : 'text-slate-400'}`} role="status">
+              {!glassModel ? 'Select a glass source model to enter its measurements.' : measurementSaveFailed ? 'Browser storage is unavailable. Measurements are kept for this session only.' : savedMeasurements[glassMeasurementKey(glassModel)] ? 'Measurements saved on this browser. Selecting this source model again restores them.' : 'Enter measurements to save them for this source model.'}
+            </p>
           </fieldset>
 
           {glassModel && <p className="mt-3 text-sm text-purple-200 break-words">Selected source: <strong>{glassModel.model}</strong></p>}
@@ -625,7 +645,7 @@ function App() {
                       if (g && d) {
                         setGlassModel(g); setDeviceModel(d);
                         setGlassType(h.glassType || 'Type A');
-                        setMeasurements({ ...emptyMeasurements(), ...h.measurements });
+                        saveMeasurements({ ...emptyMeasurements(), ...h.measurements }, g);
                         setResult(null);
                       }
                     }}

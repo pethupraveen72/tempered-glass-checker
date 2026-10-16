@@ -5,6 +5,7 @@ import { loadPhones } from './loadPhones';
 import Modal from './components/Modal';
 import PhoneImage from './components/PhoneImage';
 import SpecTable from './components/SpecTable';
+import FitVisual from './components/FitVisual';
 
 function App() {
   const [phones, setPhones] = useState([]);
@@ -568,6 +569,8 @@ function App() {
                   {result.reason_message}
                 </p>
               </div>
+
+              <FitVisual device={deviceModel} result={result} />
 
               <div className="mb-6 rounded-2xl bg-black/20 p-4 border border-white/10">
                 <h3 className="font-semibold text-white mb-3">Physical measurement result</h3>

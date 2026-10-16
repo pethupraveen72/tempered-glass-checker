@@ -6,6 +6,7 @@ import Modal from './components/Modal';
 import PhoneImage from './components/PhoneImage';
 import SpecTable from './components/SpecTable';
 import FitVisual from './components/FitVisual';
+import DimensionMatchReport from './components/DimensionMatchReport';
 import { glassMeasurementKey, readGlassMeasurements, writeGlassMeasurements } from './glassMeasurements';
 
 function App() {
@@ -437,6 +438,7 @@ function App() {
                     <span className="text-slate-500 italic text-xs">Enter physical measurements to find dimension matches. Full-cover and curved glass require a physical check.</span>
                   )}
                 </div>
+                <DimensionMatchReport glass={glassModel} measurements={measurements} type={glassType} matches={childModels} />
               </div>
             )
           }

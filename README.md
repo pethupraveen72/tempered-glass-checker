@@ -33,7 +33,9 @@ The Supabase `phones` table must exist and permit the intended reads/writes thro
 
 The final result includes the glass height, width and thickness, body clearance per edge assuming centred placement, and glass size minus display size. Negative body clearance indicates overhang; negative display margin indicates incomplete coverage. Phone body specifications are shown separately as reference data and are never substituted for physical glass measurements.
 
-Measurements belong to each check, because protectors for the same phone can vary. Recent checks save the glass type and measurements in this browser's local storage. Selecting a new glass source clears measurements; changing any comparison input clears the previous result. Copy Result includes the measurement summary. Thickness is recorded only and does not establish fingerprint or touch compatibility.
+Measurements save automatically per source phone model in this browser's local storage and restore when that model is selected again. Update them when using a different protector for the same phone. Recent checks also keep their own measurement snapshots. Changing any comparison input clears the previous result. Copy Result includes the measurement summary. Thickness is recorded only and does not establish fingerprint or touch compatibility.
+
+Results include a scaled visual overlay of the phone body, display and measured glass. Dimension Matches offers a report with per-edge clearances and a visual fit view for each match. Save Record keeps the 10 most recent reports on this browser for later review.
 
 ## Compatibility rules and limits
 
@@ -63,3 +65,5 @@ Tests cover physical fit checks, invalid and missing data, decimal tolerance bou
 | `POST /api/manual-entry` | Validate and save phone specifications |
 
 Main files: `src/App.jsx` (interface), `src/compatibility.js` (measurement checks), `src/loadPhones.js` (catalogue loading), `api/` (database/search handlers), `server.js` (local and production HTTP server), and `tests/` (regression tests).
+
+Root-level `update_*.js`, `validate_*.js`, deduplication, audit and migration scripts are catalogue maintenance tools, separate from the app and automated test suite. `scripts/cloudflare-worker.js` is the optional lookup proxy. Run maintenance tools from the project root and review them before use, as some modify catalogue data or the database.

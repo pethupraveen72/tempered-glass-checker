@@ -1,18 +1,16 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase, manualEntryToken, applyCors, safeHttpsUrl } from './config.js';
+import { mergeStoredPhone, storedPhoneColumns } from './specs.js';
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
-const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+// Timing-safe enough for a short shared secret: compares every character.
+function tokenMatches(provided) {
+    if (typeof provided !== 'string' || provided.length !== manualEntryToken.length) return false;
+    let mismatch = 0;
+    for (let i = 0; i < provided.length; i += 1) mismatch |= provided.charCodeAt(i) ^ manualEntryToken.charCodeAt(i);
+    return mismatch === 0;
+}
 
 export default async function handler(req, res) {
-    // CORS Headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
+    if (applyCors(req, res, 'POST')) return res.status(204).end();
 
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
@@ -28,52 +26,33 @@ export default async function handler(req, res) {
         if (body.resolution != null && typeof body.resolution !== 'string') {
             return res.status(400).json({ success: false, error: 'Resolution must be text' });
         }
+        const imageUrl = safeHttpsUrl(body.image_url);
+        const view360Url = safeHttpsUrl(body.view360_url);
+        // These are rendered in an iframe and opened in new tabs, so a non-https
+        // or unparseable URL is rejected rather than stored.
+        if (imageUrl === undefined || view360Url === undefined) {
+            return res.status(400).json({ success: false, error: 'Image and 360° URLs must be absolute https links' });
+        }
+
+        // Writes are refused unless a shared secret is configured and supplied,
+        // so the endpoint cannot be used to edit the catalogue anonymously.
+        if (!manualEntryToken) {
+            return res.status(503).json({ success: false, error: 'Manual entry is disabled: MANUAL_ENTRY_TOKEN is not configured' });
+        }
+        if (!tokenMatches(req.headers?.['x-admin-token'])) {
+            return res.status(401).json({ success: false, error: 'A valid admin token is required to save phone specifications' });
+        }
         if (!supabase) return res.status(503).json({ success: false, error: 'Online database is not configured' });
 
-        // Clean up data types before inserting to Postgres numeric fields
-        const newPhone = {
-            model: body.model.trim(),
-            brand: body.brand.trim() || 'Unknown',
-            screen_size: Number(body.screen_size),
-            height_mm: body.height_mm ? parseFloat(body.height_mm) : null,
-            width_mm: body.width_mm ? parseFloat(body.width_mm) : null,
-            screen_type: body.screen_type || 'Flat',
-            notch_type: body.notch_type || 'Punch Hole',
-            resolution: body.resolution || null,
-            image_url: body.image_url || null,
-            view360_url: body.view360_url || null,  // fix: was missing from payload
-            display_height_mm: null,
-            display_width_mm: null,
-        };
+        // Read the stored row first so an edit cannot erase the columns this
+        // request does not carry.
+        const { data: stored } = await supabase
+            .from('phones')
+            .select(storedPhoneColumns)
+            .eq('model', body.model.trim())
+            .maybeSingle();
 
-        if (!newPhone.model || !newPhone.height_mm || !newPhone.width_mm) {
-            return res.status(400).json({ success: false, error: 'Model, Height, and Width are required' });
-        }
-
-        // Calculate display dimensions if resolution is provided 
-        if (newPhone.resolution && newPhone.screen_size) {
-            const resMatch = newPhone.resolution.match(/(\d+)\s*x\s*(\d+)/);
-            if (resMatch) {
-                const w_px = parseInt(resMatch[1]);
-                const h_px = parseInt(resMatch[2]);
-                const widthPx = Math.min(w_px, h_px);
-                const heightPx = Math.max(w_px, h_px);
-
-                // Parse screen size float safely
-                const diagStr = String(newPhone.screen_size).match(/([\d.]+)/);
-                if (diagStr) {
-                    const diagonalIn = parseFloat(diagStr[1]);
-                    const diagonalPx = Math.sqrt(Math.pow(widthPx, 2) + Math.pow(heightPx, 2));
-
-                    if (!isNaN(diagonalPx) && diagonalPx > 0) {
-                        const heightIn = (heightPx / diagonalPx) * diagonalIn;
-                        const widthIn = (widthPx / diagonalPx) * diagonalIn;
-                        newPhone.display_height_mm = parseFloat((heightIn * 25.4).toFixed(2));
-                        newPhone.display_width_mm = parseFloat((widthIn * 25.4).toFixed(2));
-                    }
-                }
-            }
-        }
+        const newPhone = mergeStoredPhone(body, stored || {}, { image_url: imageUrl, view360_url: view360Url });
 
         console.log(`[Manual-Entry] Saving ${newPhone.model} to Supabase...`);
 

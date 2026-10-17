@@ -8,6 +8,7 @@ import SpecTable from './components/SpecTable';
 import FitVisual from './components/FitVisual';
 import DimensionMatchReport from './components/DimensionMatchReport';
 import { glassMeasurementKey, readGlassMeasurements, writeGlassMeasurements } from './glassMeasurements';
+import { safeHttpsUrl } from './safeUrl';
 
 function App() {
   const [phones, setPhones] = useState([]);
@@ -53,16 +54,25 @@ function App() {
   // Manual Entry State
   const [showManualForm, setShowManualForm] = useState(false);
   const [showOnlineSearchForm, setShowOnlineSearchForm] = useState(false);
-  const [manualForm, setManualForm] = useState({
+  const emptyManualForm = {
     model: '',
     brand: '',
     height_mm: '',
     width_mm: '',
     screen_size: '',
     resolution: '',
-    screen_type: 'Flat',
-    notch_type: 'Punch Hole',
-    image_url: ''
+    screen_type: '',
+    notch_type: '',
+    image_url: '',
+    view360_url: '',
+    display_height_mm: '',
+    display_width_mm: ''
+  };
+  const [manualForm, setManualForm] = useState(emptyManualForm);
+  // Saving is an operator action guarded by a shared secret, so the catalogue
+  // cannot be edited anonymously. Kept per browser, never bundled into the app.
+  const [adminToken, setAdminToken] = useState(() => {
+    try { return localStorage.getItem('glassAdminToken') || ''; } catch { return ''; }
   });
 
   const handleManualChange = (e) => {
@@ -77,10 +87,15 @@ function App() {
       const API_BASE = '';
       const res = await fetch(`${API_BASE}/api/manual-entry`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Admin-Token': adminToken },
         body: JSON.stringify(manualForm)
       });
       const data = await res.json();
+      if (res.status === 401) {
+        try { localStorage.removeItem('glassAdminToken'); } catch { /* Storage may be unavailable. */ }
+        showToast('That admin token was rejected. Enter the correct token to save changes.', 'error');
+        return;
+      }
       if (data.success) {
         setPhones(prev => {
           // Replace if exists, else add
@@ -96,9 +111,7 @@ function App() {
         if (glassModel?.model === data.phone.model) setGlassModel(data.phone);
         if (deviceModel?.model === data.phone.model) setDeviceModel(data.phone);
         setShowManualForm(false);
-        setManualForm({
-          model: '', brand: '', height_mm: '', width_mm: '', screen_size: '', resolution: '', screen_type: 'Flat', notch_type: 'Punch Hole', image_url: '', view360_url: ''
-        });
+        setManualForm(emptyManualForm);
       } else {
         showToast('Error saving: ' + data.error, 'error');
       }
@@ -497,9 +510,9 @@ function App() {
                     <p className="mt-2 text-xs text-slate-400">{label}</p>
                     <p className="text-sm font-semibold text-white break-words mt-1">{phone?.model || 'Select a model'}</p>
                     {phone && <button className="mt-3 rounded-lg border border-white/15 px-3 py-2 text-xs text-slate-200 hover:bg-white/10" onClick={() => {
-                      if (phone.view360_url) { setShow360Source(source); setShow360(true); }
+                      if (safeHttpsUrl(phone.view360_url)) { setShow360Source(source); setShow360(true); }
                       else window.open('https://www.google.com/search?q=' + encodeURIComponent(phone.model + ' 360 degree view'), '_blank', 'noopener,noreferrer');
-                    }}>{phone.view360_url ? 'Open 360° view' : 'Search 360° view'}</button>}
+                    }}>{safeHttpsUrl(phone.view360_url) ? 'Open 360° view' : 'Search 360° view'}</button>}
                   </div>
                 ))}
               </div>
@@ -516,12 +529,19 @@ function App() {
             </div>
           </Modal>}
 
-          {show360 && <Modal title="360° model view" onClose={close360} wide>
-            <div className="p-4">
-              <iframe src={(show360Source === 'glass' ? glassModel : deviceModel)?.view360_url} title="360 degree phone view" className="w-full h-[60dvh] rounded-xl border-0 bg-white" allowFullScreen />
-              <a className="inline-block mt-4 text-sm text-blue-300 underline" href={(show360Source === 'glass' ? glassModel : deviceModel)?.view360_url} target="_blank" rel="noreferrer">Open in a new tab</a>
-            </div>
-          </Modal>}
+          {show360 && (() => {
+            const view360 = safeHttpsUrl((show360Source === 'glass' ? glassModel : deviceModel)?.view360_url);
+            return <Modal title="360° model view" onClose={close360} wide>
+              <div className="p-4">
+                {view360
+                  ? <>
+                    <iframe src={view360} title="360 degree phone view" className="w-full h-[60dvh] rounded-xl border-0 bg-white" sandbox="allow-scripts allow-same-origin allow-popups" referrerPolicy="no-referrer" allowFullScreen />
+                    <a className="inline-block mt-4 text-sm text-blue-300 underline" href={view360} target="_blank" rel="noreferrer">Open in a new tab</a>
+                  </>
+                  : <p className="text-sm text-slate-300">This model has no valid https 360° link.</p>}
+              </div>
+            </Modal>;
+          })()}
 
       {/* Check Button */}
       < button
@@ -699,10 +719,12 @@ function App() {
                           width_mm: p.width_mm || '',
                           screen_size: p.screen_size || '',
                           resolution: p.resolution || '',
-                          screen_type: p.screen_type || 'Flat',
-                          notch_type: p.notch_type || 'Punch Hole',
+                          screen_type: p.screen_type || '',
+                          notch_type: p.notch_type || '',
                           image_url: p.image_url || '',
-                          view360_url: p.view360_url || ''
+                          view360_url: p.view360_url || '',
+                          display_height_mm: p.display_height_mm || '',
+                          display_width_mm: p.display_width_mm || ''
                         });
                         setEditQuery('');
                       }}
@@ -760,11 +782,25 @@ function App() {
               <input id="manual-view360_url" name="view360_url" value={manualForm.view360_url || ''} onChange={handleManualChange} placeholder="https://... (YouTube/Sketchfab)" className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
             </div>
 
+            {/* Display dimensions */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="manual-display_height_mm" className="block text-xs font-medium text-slate-400 mb-1.5">Display Height (mm)</label>
+                <input id="manual-display_height_mm" type="number" min="0.01" step="0.01" name="display_height_mm" value={manualForm.display_height_mm} onChange={handleManualChange} placeholder="Derived from resolution" className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
+              </div>
+              <div>
+                <label htmlFor="manual-display_width_mm" className="block text-xs font-medium text-slate-400 mb-1.5">Display Width (mm)</label>
+                <input id="manual-display_width_mm" type="number" min="0.01" step="0.01" name="display_width_mm" value={manualForm.display_width_mm} onChange={handleManualChange} placeholder="Derived from resolution" className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
+              </div>
+            </div>
+            <p className="text-xs text-slate-500">Leave the display fields empty to derive them from the resolution. If neither is available the stored values are kept.</p>
+
             {/* Screen Type + Notch */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label htmlFor="manual-screen_type" className="block text-xs font-medium text-slate-400 mb-1.5">Screen Type</label>
                 <select id="manual-screen_type" name="screen_type" value={manualForm.screen_type} onChange={handleManualChange} className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none">
+                  <option value="">Unknown (needs verification)</option>
                   <option value="Flat">Flat</option>
                   <option value="Curved">Curved</option>
                   <option value="2.5D">2.5D</option>
@@ -773,6 +809,7 @@ function App() {
               <div>
                 <label htmlFor="manual-notch_type" className="block text-xs font-medium text-slate-400 mb-1.5">Notch Type</label>
                 <select id="manual-notch_type" name="notch_type" value={manualForm.notch_type} onChange={handleManualChange} className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none">
+                  <option value="">Unknown (needs verification)</option>
                   <option value="Punch Hole">Punch Hole</option>
                   <option value="Dual Punch Hole">Dual Punch Hole</option>
                   <option value="Waterdrop">Waterdrop</option>
@@ -784,9 +821,18 @@ function App() {
               </div>
             </div>
 
+            {/* Admin token */}
+            <div>
+              <label htmlFor="manual-admin-token" className="block text-xs font-medium text-slate-400 mb-1.5">Admin Token *</label>
+              <input id="manual-admin-token" type="password" autoComplete="current-password" value={adminToken}
+                onChange={e => { setAdminToken(e.target.value); try { localStorage.setItem('glassAdminToken', e.target.value); } catch { /* Storage may be unavailable. */ } }}
+                placeholder="Required to save catalogue changes" className="w-full bg-slate-800 border border-white/10 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none" />
+              <p className="mt-1.5 text-xs text-slate-500">Matches MANUAL_ENTRY_TOKEN on the server. Remembered on this browser only.</p>
+            </div>
+
             {/* Submit + Cancel */}
             <div className="flex gap-3 pt-2 pb-safe">
-              <button type="submit" disabled={loading} className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-green-900/20 disabled:opacity-50">
+              <button type="submit" disabled={loading || !adminToken} className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-green-900/20 disabled:opacity-50">
                 {loading ? '⏳ Saving...' : '✅ Save Model'}
               </button>
               <button type="button" onClick={() => setShowManualForm(false)} className="px-5 py-3 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-xl border border-white/10 transition-all font-semibold text-sm">

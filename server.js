@@ -4,11 +4,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import search from './api/search.js';
 import manualEntry from './api/manual-entry.js';
+import { reportConfig, missingConfig } from './api/config.js';
 
 const app = express();
 const root = path.dirname(fileURLToPath(import.meta.url));
+reportConfig();
 app.use(express.json({ limit: '100kb' }));
-app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
+app.get('/api/health', (_req, res) => res.json({ status: 'ok', missingConfig: missingConfig() }));
 app.all('/api/search', search);
 app.all('/api/manual-entry', manualEntry);
 app.use('/api', (_req, res) => res.status(404).json({ error: 'Unknown API route' }));

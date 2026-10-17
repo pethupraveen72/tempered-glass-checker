@@ -1,19 +1,38 @@
 import * as cheerio from 'cheerio';
-import { createClient } from '@supabase/supabase-js';
+import bundledIndex from '../public/fallback_index.json' with { type: 'json' };
+import { supabase, workerUrl, applyCors, proxied, safeHttpsUrl } from './config.js';
+import { displayDimensions } from './specs.js';
 
-// Initialize Supabase (Vercel injected environment variables)
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
-const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+// Model-specific corrections for pages whose markup does not state the spec.
+// Prefer adding a row here over editing the detection logic.
+const specOverrides = [
+    { match: /poco c/i, screen_type: 'Flat', notch_type: 'Waterdrop' },
+];
+
+// GSMArena versions this filename on every deploy, so read the current one from
+// the homepage and keep the last known value only as a fallback.
+let cachedIndexUrl = null;
+async function resolveIndexUrl() {
+    if (cachedIndexUrl) return cachedIndexUrl;
+    try {
+        const response = await fetch(proxied('https://www.gsmarena.com/'));
+        if (response.ok) {
+            const match = (await response.text()).match(/quicksearch-\d+\.jpg/);
+            if (match) {
+                cachedIndexUrl = `https://www.gsmarena.com/${match[0]}`;
+                return cachedIndexUrl;
+            }
+        }
+    } catch (error) {
+        console.error('[Search-API] Index URL discovery failed:', error.message);
+    }
+    return 'https://www.gsmarena.com/quicksearch-8089.jpg';
+}
 
 // Helper: Fetch phones index from GSMArena
 async function fetchGSMArenaIndex() {
-    // We use the new Cloudflare Worker to fetch the index as well to avoid IP bans on Vercel
-    const cfWorkerUrl = process.env.VITE_CLOUDFLARE_WORKER_URL;
-    if (!cfWorkerUrl) throw new Error("Missing Cloudflare Worker URL in Environment Variables.");
-
-    const indexUrl = `${cfWorkerUrl}?url=${encodeURIComponent('https://www.gsmarena.com/quicksearch-8089.jpg')}`;
-    const response = await fetch(indexUrl);
+    // We use the Cloudflare Worker to fetch the index as well to avoid IP bans on Vercel
+    const response = await fetch(proxied(await resolveIndexUrl()));
     if (!response.ok) throw new Error('GSMArena index block');
 
     const text = await response.text();
@@ -44,11 +63,40 @@ function parseScreenSize(sizeStr) {
     return null;
 }
 
-async function fetchKimovilScreenType(fullName, cfWorkerUrl) {
+const normalizeModel = str => String(str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+// Queries only plausible rows. Selecting the whole table silently stopped
+// finding cache hits once the catalogue passed the server's row cap.
+async function cachedPhone(model) {
+    const queryNorm = normalizeModel(model);
+    const escape = term => term.replace(/[\\%_]/g, character => '\\' + character);
+    const terms = model.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    // A run-together query ("realme16pro") still matches "Realme 16 Pro" once
+    // split on letter/digit boundaries, which the old full-table scan handled
+    // by normalising every row.
+    const split = model.trim().toLowerCase()
+        .replace(/([a-z])(\d)/g, '$1 $2').replace(/(\d)([a-z])/g, '$1 $2')
+        .split(/\s+/).filter(Boolean);
+
+    for (const attempt of [terms, split]) {
+        if (!attempt.length) continue;
+        let query = supabase.from('phones').select('*');
+        for (const term of attempt) query = query.ilike('model', `%${escape(term)}%`);
+        const { data, error } = await query.limit(50);
+        if (error) {
+            console.error('[Search-API] Cache query failed:', error.message);
+            return null;
+        }
+        const hit = data?.find(phone => normalizeModel(phone.model) === queryNorm);
+        if (hit) return hit;
+    }
+    return null;
+}
+
+async function fetchKimovilScreenType(fullName) {
     try {
         const slug = fullName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-        const targetUrl = `https://www.kimovil.com/en/where-to-buy-${slug}?q=gsmarena.com`;
-        const res = await fetch(`${cfWorkerUrl}?url=${encodeURIComponent(targetUrl)}`);
+        const res = await fetch(proxied(`https://www.kimovil.com/en/where-to-buy-${slug}`));
         if (!res.ok) return null;
         const html = await res.text();
         const $ = cheerio.load(html);
@@ -61,6 +109,7 @@ async function fetchKimovilScreenType(fullName, cfWorkerUrl) {
         if (text) {
             if (text.includes("curved") || text.includes("dual edge")) return "Curved";
             if (text.includes("2.5d") || text.includes("2.5 d")) return "2.5D";
+            if (text.includes("flat")) return "Flat";
         }
         return null;
     } catch (e) {
@@ -69,19 +118,18 @@ async function fetchKimovilScreenType(fullName, cfWorkerUrl) {
     }
 }
 
-async function fetchSmartprixNotchType(fullName, cfWorkerUrl) {
+async function fetchSmartprixNotchType(fullName) {
     try {
-        const searchUrl = `https://www.smartprix.com/mobiles?q=${encodeURIComponent(fullName)}&gsmarena.com`;
-        const res = await fetch(`${cfWorkerUrl}?url=${encodeURIComponent(searchUrl)}`);
+        const res = await fetch(proxied(`https://www.smartprix.com/mobiles?q=${encodeURIComponent(fullName)}`));
         if (!res.ok) return null;
         const searchHtml = await res.text();
         const $s = cheerio.load(searchHtml);
 
-        let targetLink = null;
+        let targetPath = null;
         const searchTerms = fullName.toLowerCase().split(" ").filter(t => t.length > 2);
 
         $s(".sm-product").each((i, el) => {
-            if (!targetLink) {
+            if (!targetPath) {
                 const name = $s(el).find("h2").text().toLowerCase().trim();
                 const escapedModel = fullName.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
                 const strictRegex = new RegExp(`\\b${escapedModel}\\b`, "i");
@@ -89,14 +137,14 @@ async function fetchSmartprixNotchType(fullName, cfWorkerUrl) {
                 const isMatch = Math.abs(name.length - fullName.length) < 15 && searchTerms.every(term => name.includes(term));
 
                 if (strictRegex.test(name) || isMatch) {
-                    targetLink = "https://www.smartprix.com" + $s(el).find("a").attr("href") + "?q=gsmarena.com";
+                    targetPath = $s(el).find("a").attr("href");
                 }
             }
         });
 
-        if (!targetLink) return null;
+        if (!targetPath) return null;
 
-        const detailRes = await fetch(`${cfWorkerUrl}?url=${encodeURIComponent(targetLink)}`);
+        const detailRes = await fetch(proxied(new URL(targetPath, 'https://www.smartprix.com').toString()));
         if (!detailRes.ok) return null;
         const detailHtml = await detailRes.text();
         const $d = cheerio.load(detailHtml);
@@ -116,65 +164,59 @@ async function fetchSmartprixNotchType(fullName, cfWorkerUrl) {
     }
 }
 
-async function detectNotchType($prod, brand, fullName) {
+// Returns null when no source states the notch type. A guessed value is
+// indistinguishable from a confirmed one and drives a hard compatibility
+// verdict, so the absence has to survive into the stored record.
+export function detectNotchType($prod, fullName) {
     const fn = fullName.toLowerCase();
 
     // 1. Known Models
     if (fn.includes('iphone 14 pro') || fn.includes('iphone 15') || fn.includes('iphone 16')) return 'Dynamic Island';
     if (fn.includes('iphone') && !fn.includes('se')) return 'Wide Notch';
-    if (fn.includes('fold') || String(fn).match(/z fold/)) return 'Punch Hole';
 
     // 2. GSMArena Text
     const displayRes = $prod('[data-spec="displayresolution"]').text().toLowerCase();
     const displayType = $prod('[data-spec="displaytype"]').text().toLowerCase();
-    const metaDesc = $prod('meta[name="Description"]').attr('content') || '';
-    const descText = metaDesc.toLowerCase();
+    const descText = ($prod('meta[name="Description"]').attr('content') || '').toLowerCase();
 
     if (descText.includes('punch hole') || displayRes.includes('punch hole') || displayType.includes('punch hole') || descText.match(/(\d+)mp.+punch/)) return 'Punch Hole';
     if (descText.includes('water drop') || displayRes.includes('waterdrop') || descText.includes('tear drop') || descText.includes('dewdrop') || descText.includes('dot drop') || descText.includes('v-notch') || descText.includes('u-notch')) return 'Waterdrop';
     if (descText.includes('dynamic island')) return 'Dynamic Island';
 
-    return 'Punch Hole';
+    return null;
 }
 
 export default async function handler(req, res) {
-    // CORS Headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
+    if (applyCors(req, res, 'GET')) return res.status(204).end();
     if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
     const { model, force } = req.query;
     if (typeof model !== 'string' || !model.trim()) return res.status(400).json({ error: 'Model query parameter is required' });
     if (!supabase) return res.status(503).json({ error: 'Online database is not configured' });
+    if (!workerUrl) return res.status(503).json({ error: 'Online lookup proxy is not configured' });
 
     console.log(`[Search-API] Processing request for: ${model}`);
 
     try {
         // --- 1. LOCAL SUPABASE LOOKUP ---
         if (force !== 'true') {
-            const normalize = (str) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
-            const queryNorm = normalize(model);
-
-            // Note: Since Vercel wakes up, we can't fetch ALL phones into memory easily inside the function limit.
-            // But we can query Supabase directly for a fuzzy match
-            const { data, error } = await supabase
-                .from('phones')
-                .select('*');
-
-            if (!error && data) {
-                const cached = data.find(p => normalize(p.model) === queryNorm);
-                if (cached) {
-                    console.log(`[Search-API] Cache hit → returning from Supabase DB.`);
-                    return res.status(200).json(cached);
-                }
+            const cached = await cachedPhone(model);
+            if (cached) {
+                console.log('[Search-API] Cache hit -> returning from Supabase DB.');
+                return res.status(200).json(cached);
             }
         }
 
         // --- 2. INDEX LOOKUP ---
         console.log('[Search-API] Checking GSMArena index...');
-        const indexData = await fetchGSMArenaIndex();
+        let indexData;
+        try {
+            indexData = await fetchGSMArenaIndex();
+        } catch (error) {
+            // The bundled index is stale but lets a lookup succeed when
+            // GSMArena blocks the request outright.
+            console.error('[Search-API] Live index unavailable, using bundled index:', error.message);
+            indexData = bundledIndex;
+        }
 
         let brandsMap = {};
         if (Array.isArray(indexData[0])) {
@@ -210,87 +252,47 @@ export default async function handler(req, res) {
         const phoneId = bestMatch[1];
 
         // --- 3. SCRAPER LOGIC (CLOUDFLARE WORKER) ---
-        let productUrl = `https://www.gsmarena.com/a-${phoneId}.php`;
-        const cfWorkerUrl = process.env.VITE_CLOUDFLARE_WORKER_URL;
-
-        if (!cfWorkerUrl) {
-            throw new Error("Missing Cloudflare Worker URL in Environment Variables.");
-        }
-
-        const scraperUrl = `${cfWorkerUrl}?url=${encodeURIComponent(productUrl)}`;
-
         console.log(`[Search-API] Executing concurrent scraper tasks for: ${fullName}`);
 
-        const [gsmRes, kimovilScreen, smartprixNotch] = await Promise.all([
-            fetch(scraperUrl).then(async r => {
+        const [html, kimovilScreen, smartprixNotch] = await Promise.all([
+            fetch(proxied(`https://www.gsmarena.com/a-${phoneId}.php`)).then(async r => {
                 if (!r.ok) throw new Error(`GSMArena Proxy Error HTTP ${r.status}`);
                 return r.text();
             }),
-            fetchKimovilScreenType(fullName, cfWorkerUrl),
-            fetchSmartprixNotchType(fullName, cfWorkerUrl)
+            fetchKimovilScreenType(fullName),
+            fetchSmartprixNotchType(fullName)
         ]);
-
-        const html = gsmRes;
 
         const $prod = cheerio.load(html);
         const extractedBrand = $prod('.specs-phone-name-title').text().trim().split(' ')[0] || bestBrand;
 
         // Parsing
-        const dimText = $prod('[data-spec="dimensions"]').text();
-        const dims = parseDimensions(dimText);
-        const sizeText = $prod('[data-spec="displaysize"]').text();
-        const screenSize = parseScreenSize(sizeText);
+        const dims = parseDimensions($prod('[data-spec="dimensions"]').text());
+        const screenSize = parseScreenSize($prod('[data-spec="displaysize"]').text());
 
         if (!dims || !screenSize) throw new Error('Specs incomplete on page');
 
         const resolutionText = $prod('[data-spec="displayresolution"]').text();
-        let resolution = "";
-        if (resolutionText) resolution = resolutionText.split(',')[0].trim();
+        const resolution = resolutionText ? resolutionText.split(',')[0].trim() : "";
 
+        // Both stay null when nothing confirms them, so compatibility checks
+        // report "needs verification" rather than acting on an assumption.
         let screenType = kimovilScreen;
         if (!screenType) {
-            screenType = "Flat";
             const bodyText = $prod('body').text().toLowerCase();
             if (bodyText.includes('curved display') || fullName.toLowerCase().includes('edge')) screenType = "Curved";
             else if (bodyText.includes('2.5d')) screenType = "2.5D";
+            else if (bodyText.includes('flat display')) screenType = "Flat";
         }
 
-        let notchType = smartprixNotch;
-        if (!notchType) {
-            notchType = await detectNotchType($prod, extractedBrand, fullName);
-        }
+        const notchType = smartprixNotch || detectNotchType($prod, fullName);
 
-        // --- HARDCODE OVERRIDES ---
-        if (fullName.toLowerCase().includes("poco c")) {
-            screenType = "Flat";
-            notchType = "Waterdrop";
-        }
+        const override = specOverrides.find(entry => entry.match.test(fullName));
 
-        let imageUrl = null;
-        const imgElement = $prod('.specs-photo-main img');
-        if (imgElement.length > 0) {
-            imageUrl = imgElement.attr('src');
-            if (imageUrl && !imageUrl.startsWith('http')) imageUrl = `https://www.gsmarena.com/${imageUrl}`;
-        }
+        let imageUrl = $prod('.specs-photo-main img').attr('src') || null;
+        if (imageUrl && !imageUrl.startsWith('http')) imageUrl = `https://www.gsmarena.com/${imageUrl}`;
 
-        // Display Dimensions calculation
-        let displayHeightMm = null, displayWidthMm = null;
-        if (resolution && screenSize) {
-            const resMatch = resolution.match(/(\d+)\s*x\s*(\d+)/);
-            if (resMatch) {
-                const w_px = parseInt(resMatch[1]);
-                const h_px = parseInt(resMatch[2]);
-                const widthPx = Math.min(w_px, h_px);
-                const heightPx = Math.max(w_px, h_px);
-                const diagonalPx = Math.sqrt(Math.pow(widthPx, 2) + Math.pow(heightPx, 2));
-                if (!isNaN(diagonalPx) && diagonalPx > 0) {
-                    const heightIn = (heightPx / diagonalPx) * screenSize;
-                    const widthIn = (widthPx / diagonalPx) * screenSize;
-                    displayHeightMm = parseFloat((heightIn * 25.4).toFixed(2));
-                    displayWidthMm = parseFloat((widthIn * 25.4).toFixed(2));
-                }
-            }
-        }
+        const display = displayDimensions(resolution, screenSize);
 
         const newPhone = {
             model: fullName,
@@ -298,12 +300,12 @@ export default async function handler(req, res) {
             screen_size: screenSize,
             height_mm: dims.height,
             width_mm: dims.width,
-            screen_type: screenType,
-            notch_type: notchType,
+            screen_type: override?.screen_type ?? screenType ?? null,
+            notch_type: override?.notch_type ?? notchType ?? null,
             resolution: resolution,
-            image_url: imageUrl,
-            display_height_mm: displayHeightMm,
-            display_width_mm: displayWidthMm
+            image_url: safeHttpsUrl(imageUrl) ?? null,
+            display_height_mm: display.height,
+            display_width_mm: display.width
         };
 
         // --- 4. INSERT INTO SUPABASE ---

@@ -30,9 +30,8 @@ COPY --from=builder /app/api ./api
 COPY --from=builder /app/public/phones.json ./public/phones.json
 COPY --from=builder /app/public/fallback_index.json ./public/fallback_index.json
 
-# Expose port (Cloud Run defaults to 8080, but we can config)
-# We configured server.js to listen on 3000, but Cloud Run expects PORT env var usually.
-# Let's adjust server.js to use process.env.PORT, but for now hardcoded 3000 is fine if we tell Cloud Run.
+# server.js listens on process.env.PORT and falls back to 3000, so Cloud Run's
+# injected PORT is honoured without further configuration.
 EXPOSE 3000
 
 # Start command

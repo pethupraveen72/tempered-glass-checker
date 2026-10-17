@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import search from './api/search.js';
 import manualEntry from './api/manual-entry.js';
+import stock from './api/stock.js';
 import { reportConfig, missingConfig } from './api/config.js';
 
 const app = express();
@@ -13,6 +14,7 @@ app.use(express.json({ limit: '100kb' }));
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', missingConfig: missingConfig() }));
 app.all('/api/search', search);
 app.all('/api/manual-entry', manualEntry);
+app.all('/api/stock', stock);
 app.use('/api', (_req, res) => res.status(404).json({ error: 'Unknown API route' }));
 app.use(express.static(path.join(root, 'dist')));
 app.get('/{*path}', (_req, res) => res.sendFile(path.join(root, 'dist/index.html')));

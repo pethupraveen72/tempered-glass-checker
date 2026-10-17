@@ -21,6 +21,7 @@ For online database reads, manual saving and online lookup, copy `.env.example` 
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-public-anon-key
 VITE_CLOUDFLARE_WORKER_URL=https://your-proxy.example
+SUPABASE_SERVICE_KEY=your-service-role-key
 MANUAL_ENTRY_TOKEN=a-long-random-string
 CORS_ALLOWED_ORIGINS=https://your-site.example
 ```
@@ -42,6 +43,25 @@ Saving a phone through **Add / Edit Model** requires the admin token in that for
 The final result includes the glass height, width and thickness, body clearance per edge assuming centred placement, and glass size minus display size. Negative body clearance indicates overhang; negative display margin indicates incomplete coverage. Phone body specifications are shown separately as reference data and are never substituted for physical glass measurements.
 
 Measurements save automatically per source phone model in this browser's local storage and restore when that model is selected again. Update them when using a different protector for the same phone. Recent checks also keep their own measurement snapshots. Changing any comparison input clears the previous result. Copy Result includes the measurement summary. Thickness is recorded only and does not establish fingerprint or touch compatibility.
+
+## Glass stock and bulk measurement entry
+
+**Stock** records the protectors actually held, in the database, so every device and staff member sees the same list rather than one browser's local storage. Each record carries a SKU or box label, the phone model it is sold for, its glass type, measured height and width, optional thickness, quantity and shelf.
+
+Run `migrations/001_glass_stock.sql` in the Supabase SQL editor once to create the table. Until then the Stock screen explains the setup step and the rest of the app continues to work from browser-stored measurements. Saving stock requires the admin token, and the migration grants the public anon key read access only, so writes must go through the API.
+
+The Stock screen enters many protectors at once: add rows, or paste tab- or comma-separated columns from a spreadsheet as `SKU, sold-for model, type, height, width, thickness, quantity` (the type accepts `A`/`clear`, `B`/`full`, `C`/`curved`). Rows are checked before submission, every problem is reported together, and a batch saves all or nothing so a bulk entry never half-applies. An existing SKU is updated rather than duplicated.
+
+## Compatibility report
+
+**Report** checks every glass you hold or have measured against the whole catalogue at once, instead of selecting a pair at a time.
+
+- **By glass** lists each protector with the models it fits and those still needing a physical check.
+- **By phone** is the reverse: given a phone, which of your protectors cover it, with quantity and shelf.
+
+Each stock record is evaluated as its own glass type; measurements saved in this browser follow the selected compatibility mode. Where a stock record's sold-for model is not in the catalogue, its screen shape and notch type cannot be compared and no confirmed fit is reported. Stock replaces a browser measurement for the same model so one protector is never listed twice. The report exports as CSV for a spreadsheet or a printed shelf sheet, and selecting any pair loads it for a full check.
+
+As everywhere else, **Dimensions fit** means the size checks passed; it is not a manufacturer guarantee, and full-cover and curved modes never report a confirmed fit.
 
 Results include a scaled visual overlay of the phone body, display and measured glass. Dimension Matches offers a report with per-edge clearances and a visual fit view for each match. Save Record keeps the 10 most recent reports on this browser for later review.
 
@@ -71,7 +91,10 @@ Tests cover physical fit checks, invalid and missing data, decimal tolerance bou
 | `GET /api/health` | API health and missing configuration |
 | `GET /api/search?model=...` | Cached lookup or online scrape |
 | `POST /api/manual-entry` | Validate and save phone specifications (requires `X-Admin-Token`) |
+| `GET /api/stock` | List glass stock, or report that the table needs creating |
+| `POST /api/stock` | Validate and save one or many stock items (requires `X-Admin-Token`) |
+| `DELETE /api/stock?sku=...` | Remove a stock item (requires `X-Admin-Token`) |
 
 Main files: `src/App.jsx` (interface), `src/compatibility.js` (measurement checks), `src/loadPhones.js` (catalogue loading), `api/` (database/search handlers), `server.js` (local and production HTTP server), and `tests/` (regression tests).
 
-Root-level `update_*.js`, `validate_*.js`, deduplication, audit and migration scripts are catalogue maintenance tools, separate from the app and automated test suite. `scripts/cloudflare-worker.js` is the lookup proxy required for uncached online lookups; it proxies only https requests to an exact allowlist of spec sites. `api/config.js` holds shared configuration, CORS and URL validation, and `api/specs.js` the display-dimension estimate. Run maintenance tools from the project root and review them before use, as some modify catalogue data or the database.
+Root-level `update_*.js`, `validate_*.js`, deduplication, audit and migration scripts are catalogue maintenance tools, separate from the app and automated test suite. `scripts/cloudflare-worker.js` is the lookup proxy required for uncached online lookups; it proxies only https requests to an exact allowlist of spec sites. `api/config.js` holds shared configuration, CORS and URL validation, and `api/specs.js` the display-dimension estimate. `src/compatibilityReport.js` builds the catalogue-wide report, `src/stockClient.js` talks to the stock API, and `migrations/` holds SQL applied by hand in Supabase. Run maintenance tools from the project root and review them before use, as some modify catalogue data or the database.

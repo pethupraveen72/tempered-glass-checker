@@ -2,8 +2,20 @@ import { createClient } from '@supabase/supabase-js';
 
 const url = process.env.VITE_SUPABASE_URL;
 const key = process.env.VITE_SUPABASE_ANON_KEY;
+// Server-only. Never give this a VITE_ name: that would bundle it into the
+// frontend and hand every visitor full write access to the database.
+const serviceKey = process.env.SUPABASE_SERVICE_KEY;
 
 export const supabase = url && key ? createClient(url, key) : null;
+
+// Used for writes, so row-level security can refuse the public anon key while
+// the API still works. Falls back to the anon client when no service key is
+// configured, which keeps writes working on a database that has not been
+// locked down yet.
+export const supabaseAdmin = url && serviceKey
+  ? createClient(url, serviceKey, { auth: { persistSession: false } })
+  : supabase;
+export const hasServiceKey = Boolean(url && serviceKey);
 export const workerUrl = process.env.VITE_CLOUDFLARE_WORKER_URL || null;
 export const manualEntryToken = process.env.MANUAL_ENTRY_TOKEN || null;
 
@@ -29,7 +41,8 @@ export function reportConfig(log = console) {
   log.warn(`[Config] Missing environment variables: ${missing.join(', ')}.`);
   if (!supabase) log.warn('[Config] Online database disabled: search and manual entry will return 503.');
   if (!workerUrl) log.warn('[Config] Worker URL absent: uncached online lookups will fail.');
-  if (!manualEntryToken) log.warn('[Config] MANUAL_ENTRY_TOKEN absent: manual entry writes are refused.');
+  if (!manualEntryToken) log.warn('[Config] MANUAL_ENTRY_TOKEN absent: manual entry and stock writes are refused.');
+  if (!hasServiceKey) log.warn('[Config] SUPABASE_SERVICE_KEY absent: writes use the public anon key, which row-level security should refuse.');
   log.warn('[Config] Save .env as UTF-8 without a BOM; dotenv cannot read UTF-16 files.');
 }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from './supabaseClient';
 import { emptyMeasurements, evaluateCompatibility, formatMm, formatDifference } from './compatibility';
 import { loadPhones } from './loadPhones';
@@ -7,6 +7,10 @@ import PhoneImage from './components/PhoneImage';
 import SpecTable from './components/SpecTable';
 import FitVisual from './components/FitVisual';
 import DimensionMatchReport from './components/DimensionMatchReport';
+import CompatibilityReport from './components/CompatibilityReport';
+import StockManager from './components/StockManager';
+import { sourcesFromMeasurements, sourcesFromStock, combineSources } from './compatibilityReport';
+import { loadStock } from './stockClient';
 import { glassMeasurementKey, readGlassMeasurements, writeGlassMeasurements } from './glassMeasurements';
 import { safeHttpsUrl } from './safeUrl';
 
@@ -45,6 +49,8 @@ function App() {
   const closeManual = useCallback(() => setShowManualForm(false), []);
   const closeOnline = useCallback(() => setShowOnlineSearchForm(false), []);
   const closeZoom = useCallback(() => setShowZoom(false), []);
+  const closeReport = useCallback(() => setShowReport(false), []);
+  const closeStock = useCallback(() => setShowStock(false), []);
   const close360 = useCallback(() => setShow360(false), []);
   const [editQuery, setEditQuery] = useState('');
   const [showZoom, setShowZoom] = useState(false);
@@ -54,6 +60,9 @@ function App() {
   // Manual Entry State
   const [showManualForm, setShowManualForm] = useState(false);
   const [showOnlineSearchForm, setShowOnlineSearchForm] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [showStock, setShowStock] = useState(false);
+  const [stockItems, setStockItems] = useState([]);
   const emptyManualForm = {
     model: '',
     brand: '',
@@ -132,6 +141,19 @@ function App() {
     }).catch(error => { if (active) { setCatalogueState('error'); setToast({ msg: error.message, type: 'error' }); } });
     return () => { active = false; };
   }, []);
+
+  // Stock is optional: the table may not exist yet, and the report falls back
+  // to measurements saved in this browser.
+  const refreshStock = useCallback(() => {
+    loadStock().then(({ items }) => setStockItems(items)).catch(() => setStockItems([]));
+  }, []);
+  useEffect(() => { refreshStock(); }, [refreshStock]);
+
+  // Shared stock records plus anything measured only in this browser.
+  const reportSources = useMemo(() => combineSources(
+    sourcesFromStock(phones, stockItems),
+    sourcesFromMeasurements(phones, savedMeasurements),
+  ), [phones, stockItems, savedMeasurements]);
 
   // Toast helper — auto-dismiss after five seconds.
   useEffect(() => {
@@ -663,6 +685,22 @@ function App() {
           <span className="text-sm">Search Online</span>
         </button>
         <button
+          aria-label="Open glass stock"
+          onClick={() => setShowStock(true)}
+          className="flex flex-1 sm:flex-none min-w-0 justify-center items-center gap-2 bg-gradient-to-r from-slate-700 to-slate-600 hover:from-slate-600 hover:to-slate-500 text-white font-bold rounded-full shadow-2xl shadow-slate-900/50 transition-all active:scale-95 py-3 px-3 border border-white/20"
+        >
+          <span className="text-lg leading-none">📦</span>
+          <span className="text-sm">Stock</span>
+        </button>
+        <button
+          aria-label="Open the compatibility report"
+          onClick={() => setShowReport(true)}
+          className="flex flex-1 sm:flex-none min-w-0 justify-center items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-full shadow-2xl shadow-emerald-900/50 transition-all active:scale-95 py-3 px-3 border border-emerald-400/30"
+        >
+          <span className="text-lg leading-none">📋</span>
+          <span className="text-sm">Report</span>
+        </button>
+        <button
           onClick={() => setShowManualForm(true)}
           title="Add or Edit a Phone Model"
           className="flex flex-1 sm:flex-none min-w-0 justify-center items-center gap-2 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-bold rounded-full shadow-2xl shadow-purple-900/50 transition-all active:scale-95 py-3 px-3 border border-purple-400/30"
@@ -672,6 +710,32 @@ function App() {
           <span className="text-sm hidden sm:inline">Add / Edit Model</span>
         </button>
       </div>
+
+      {showReport && <CompatibilityReport
+        phones={phones}
+        sources={reportSources}
+        type={glassType}
+        onClose={closeReport}
+        onPick={(source, device) => {
+          setGlassModel(source.glass);
+          setDeviceModel(device);
+          setGlassQuery('');
+          setDeviceQuery('');
+          // A stock item carries its own measurements and type, so loading it
+          // reproduces exactly what the report evaluated.
+          if (source.origin === 'stock') {
+            setGlassType(source.type);
+            setMeasurements({ ...emptyMeasurements(), ...source.measurements });
+          }
+        }}
+      />}
+
+      {showStock && <StockManager
+        phones={phones}
+        adminToken={adminToken}
+        onClose={closeStock}
+        onChanged={refreshStock}
+      />}
 
       {showOnlineSearchForm && <Modal title="Search online" onClose={closeOnline}>
         <form className="p-4 sm:p-6 space-y-4" onSubmit={async e => {
